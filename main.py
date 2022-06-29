@@ -70,8 +70,6 @@ async def skip(ctx):
 
 @client.command()
 async def clear(ctx):
-    voice = ctx.guild.voice_client
-    voice.stop()
     queues[ctx.guild.id].clear()
 
 
