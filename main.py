@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from collections import defaultdict
 import tempfile
 import requests
 import yt_dlp
@@ -7,15 +8,15 @@ import re
 
 client = commands.Bot(command_prefix='-')
 
-queues = {}
+song_queues = defaultdict(lambda: [])
 
 
 def start_playing(ctx):
     guild_id = ctx.guild.id
 
-    if len(queues[guild_id]) > 0:
+    if len(song_queues[guild_id]) > 0:
         voice = ctx.guild.voice_client
-        source = queues[guild_id].pop(0)
+        source = song_queues[guild_id].pop(0)
 
         client.loop.create_task(ctx.channel.send(f'Now playing: \U0001F3B5 **{source[1]}**'))
         voice.play(discord.FFmpegPCMAudio(source[0]), after=lambda e: start_playing(ctx))
@@ -53,24 +54,35 @@ async def play(ctx, *, keyword):
         info_dict = ydl.extract_info(f'https://www.youtube.com/watch?v={video_id}')
         video_title = info_dict.get('title')
 
-    if guild_id in queues:
-        queues[guild_id].append((template_name, video_title))
-    else:
-        queues[guild_id] = [(template_name, video_title)]
+    song_queues[guild_id].append((template_name, video_title))
+    await ctx.channel.send(f'Added to queue: \U0001F3B5 **{video_title}**')
 
     if not voice.is_playing():
         start_playing(ctx)
 
 
 @client.command()
+async def queue(ctx):
+    guild_id = ctx.guild.id
+    if len(song_queues[guild_id]) > 0:
+        numbered_list = '\n'.join([f'{i + 1}) {song[1]}' for i, song in (enumerate(song_queues[guild_id]))])
+        await ctx.channel.send(f'```{numbered_list}```')
+    else:
+        await ctx.channel.send('```There are no songs in the queue!```')
+
+
+@client.command()
 async def skip(ctx):
     voice = ctx.guild.voice_client
-    voice.stop()
+
+    if voice is not None:
+        voice.stop()
 
 
 @client.command()
 async def clear(ctx):
-    queues[ctx.guild.id].clear()
+    guild_id = ctx.guild.id
+    song_queues[guild_id].clear()
 
 
 with tempfile.TemporaryDirectory() as tempdirname:
