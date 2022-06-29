@@ -52,14 +52,13 @@ async def play(ctx, *, keyword):
         info_dict = ydl.extract_info(f'https://www.youtube.com/watch?v={video_id}')
         video_title = info_dict.get('title')
 
-    if voice.is_playing():
-        if guild_id in queues:
-            queues[guild_id].append((template_name, video_title))
-        else:
-            queues[guild_id] = [(template_name, video_title)]
+    if guild_id in queues:
+        queues[guild_id].append((template_name, video_title))
     else:
-        voice.play(discord.FFmpegPCMAudio(template_name), after=lambda e: start_playing(ctx))
-        await ctx.channel.send(f'Now playing: \U0001F3B5 **{video_title}**')
+        queues[guild_id] = [(template_name, video_title)]
+
+    if not voice.is_playing():
+        start_playing(ctx)
 
 
 @client.command()
