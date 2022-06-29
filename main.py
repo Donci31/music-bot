@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+import tempfile
 import requests
 import yt_dlp
 import re
@@ -41,7 +42,7 @@ async def play(ctx, *, keyword):
     html = requests.get(f'https://www.youtube.com/results?search_query={search_keyword}').text
     video_id = re.search(r'watch\?v=(\S{11})', html).group(1)
 
-    template_name = f'{guild_id}/{video_id}.m4a'
+    template_name = f'{tempdirname}/{video_id}.m4a'
 
     ydl_opts = {
         'format': 'm4a/bestaudio/best',
@@ -74,4 +75,5 @@ async def clear(ctx):
     queues[ctx.guild.id].clear()
 
 
-client.run(INSERT_TOKEN_HERE)
+with tempfile.TemporaryDirectory() as tempdirname:
+    client.run(INSERT_TOKEN_HERE)
