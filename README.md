@@ -5,4 +5,4 @@
 * Pip install all the packages found in the requirements.txt
 * Insert your bot's token into the client.run functions parentheses as a string
 ## Creator:
-Szigeti Donát
+Donát Szigeti
