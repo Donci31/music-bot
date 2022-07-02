@@ -28,9 +28,8 @@ async def play(ctx, *, keyword):
         await ctx.channel.send(embed=join_message)
         return
 
-    voice_channel = ctx.author.voice.channel
-
     if ctx.voice_client is None:
+        voice_channel = ctx.author.voice.channel
         await voice_channel.connect()
 
     voice = ctx.voice_client
@@ -66,6 +65,7 @@ async def play(ctx, *, keyword):
 @client.command()
 async def queue(ctx):
     guild_id = ctx.guild.id
+
     if len(song_queues[guild_id]) > 0:
         numbered_list = '\n'.join([f'**{i + 1})** [{song[1]}](https://www.youtube.com/watch?v={song[0]})'
                                    for i, song in (enumerate(song_queues[guild_id]))])
@@ -87,6 +87,7 @@ async def skip(ctx):
 @client.command()
 async def clear(ctx):
     guild_id = ctx.guild.id
+
     song_queues[guild_id].clear()
 
 
