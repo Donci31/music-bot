@@ -15,7 +15,7 @@ def start_playing(ctx):
     guild_id = ctx.guild.id
 
     if len(song_queues[guild_id]) > 0:
-        voice = ctx.guild.voice_client
+        voice = ctx.voice_client
         source = song_queues[guild_id].pop(0)
 
         voice.play(discord.FFmpegPCMAudio(source[0]), after=lambda e: start_playing(ctx))
@@ -32,11 +32,8 @@ async def play(ctx, *, keyword):
 
     if ctx.voice_client is None:
         await voice_channel.connect()
-    elif ctx.voice_client.channel != voice_channel:
-        ctx.voice_client.disconnect()
-        await voice_channel.connect()
 
-    voice = ctx.guild.voice_client
+    voice = ctx.voice_client
     guild_id = ctx.guild.id
 
     search_keyword = keyword.replace(' ', '+')
@@ -81,7 +78,7 @@ async def queue(ctx):
 
 @client.command()
 async def skip(ctx):
-    voice = ctx.guild.voice_client
+    voice = ctx.voice_client
 
     if voice is not None:
         voice.stop()
