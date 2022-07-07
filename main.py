@@ -10,6 +10,8 @@ client = commands.Bot(command_prefix='-')
 
 song_queues = defaultdict(lambda: [])
 
+YOUTUBE_PREFIX = 'https://www.youtube.com/watch?v='
+
 
 def start_playing(ctx):
     guild_id = ctx.guild.id
@@ -35,9 +37,12 @@ async def play(ctx, *, keyword):
     voice = ctx.voice_client
     guild_id = ctx.guild.id
 
-    search_query = {'search_query': keyword}
-    html = requests.get(f'https://www.youtube.com/results', params=search_query).text
-    video_id = re.search(r'watch\?v=(\S{11})', html).group(1)
+    if YOUTUBE_PREFIX in keyword:
+        video_id = keyword.removeprefix(YOUTUBE_PREFIX)
+    else:
+        search_query = {'search_query': keyword}
+        html = requests.get(f'https://www.youtube.com/results', params=search_query).text
+        video_id = re.search(r'watch\?v=(\S{11})', html).group(1)
 
     song_path = f'{tempdirname}/{video_id}.m4a'
 
@@ -47,12 +52,12 @@ async def play(ctx, *, keyword):
     }
 
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info_dict = ydl.extract_info(f'https://www.youtube.com/watch?v={video_id}')
+        info_dict = ydl.extract_info(f'{YOUTUBE_PREFIX}{video_id}')
         video_title = info_dict.get('title')
 
     song_queues[guild_id].append((song_path, video_title))
 
-    desc = f'[{video_title}](https://www.youtube.com/watch?v={video_id})'
+    desc = f'[{video_title}]({YOUTUBE_PREFIX}{video_id})'
     queued_message = discord.Embed(title='Song queued', description=desc)
     await ctx.channel.send(embed=queued_message)
 
@@ -65,7 +70,7 @@ async def queue(ctx):
     guild_id = ctx.guild.id
 
     if len(song_queues[guild_id]) > 0:
-        numbered_list = '\n'.join([f'**{i + 1})** [{song[1]}](https://www.youtube.com/watch?v={song[0]})'
+        numbered_list = '\n'.join([f'**{i + 1})** [{song[1]}]({YOUTUBE_PREFIX}{song[0]})'
                                    for i, song in (enumerate(song_queues[guild_id]))])
         queue_message = discord.Embed(title='Queue', description=numbered_list)
         await ctx.channel.send(embed=queue_message)
