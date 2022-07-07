@@ -18,7 +18,7 @@ def start_playing(ctx):
         voice = ctx.voice_client
         music = song_queues[guild_id].pop(0)
 
-        voice.play(discord.FFmpegPCMAudio(music), after=lambda e: start_playing(ctx))
+        voice.play(discord.FFmpegPCMAudio(music[0]), after=lambda e: start_playing(ctx))
 
 
 @client.command()
@@ -50,7 +50,7 @@ async def play(ctx, *, keyword):
         info_dict = ydl.extract_info(f'https://www.youtube.com/watch?v={video_id}')
         video_title = info_dict.get('title')
 
-    song_queues[guild_id].append(song_path)
+    song_queues[guild_id].append((song_path, video_title))
 
     desc = f'[{video_title}](https://www.youtube.com/watch?v={video_id})'
     queued_message = discord.Embed(title='Song queued', description=desc)
