@@ -35,8 +35,8 @@ async def play(ctx, *, keyword):
     voice = ctx.voice_client
     guild_id = ctx.guild.id
 
-    search_keyword = keyword.replace(' ', '+')
-    html = requests.get(f'https://www.youtube.com/results?search_query={search_keyword}').text
+    search_query = {'search_query': keyword}
+    html = requests.get(f'https://www.youtube.com/results', params=search_query).text
     video_id = re.search(r'watch\?v=(\S{11})', html).group(1)
 
     song_path = f'{tempdirname}/{video_id}.m4a'
