@@ -37,7 +37,7 @@ async def play(ctx, *, keyword):
     voice = ctx.voice_client
     guild_id = ctx.guild.id
 
-    if YOUTUBE_PREFIX in keyword:
+    if keyword.startswith(YOUTUBE_PREFIX):
         video_id = keyword.removeprefix(YOUTUBE_PREFIX)
     else:
         search_query = {'search_query': keyword}
