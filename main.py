@@ -50,7 +50,7 @@ class Chungus(commands.Bot):
             await ctx.channel.send(embed=queued_message)
 
             if not voice.is_playing():
-                self.start_playing(ctx)
+                self.__start_playing(ctx)
 
         @self.command()
         async def queue(ctx):
@@ -78,14 +78,14 @@ class Chungus(commands.Bot):
 
             self.song_queues[guild_id].clear()
 
-    def start_playing(self, ctx):
+    def __start_playing(self, ctx):
         guild_id = ctx.guild.id
 
         if self.song_queues[guild_id]:
             voice = ctx.voice_client
             music = self.song_queues[guild_id].pop(0)
 
-            voice.play(discord.FFmpegPCMAudio(music[0]), after=lambda e: self.start_playing(ctx))
+            voice.play(discord.FFmpegPCMAudio(music[0]), after=lambda e: self.__start_playing(ctx))
 
     async def close(self):
         self.songs_directory.cleanup()
