@@ -8,12 +8,10 @@ import re
 
 
 class Chungus(commands.Bot):
-
     def __init__(self):
         super().__init__(command_prefix='-')
         self.song_queues = defaultdict(lambda: [])
-        self.songs_folder = tempfile.TemporaryDirectory()
-
+        self.songs_directory = tempfile.TemporaryDirectory()
         youtube_prefix = 'https://www.youtube.com/watch?v='
 
         @self.command()
@@ -34,7 +32,7 @@ class Chungus(commands.Bot):
             html = requests.get('https://www.youtube.com/results', params=search_query).text
             video_id = re.search(r'/(?:watch\?v=|shorts/)(\S{11})', html).group(1)
 
-            song_path = f'{self.songs_folder}/{video_id}.m4a'
+            song_path = f'{self.songs_directory.name}/{video_id}.m4a'
 
             ydl_opts = {
                 'format': 'm4a/bestaudio/best',
@@ -90,7 +88,7 @@ class Chungus(commands.Bot):
             voice.play(discord.FFmpegPCMAudio(music[0]), after=lambda e: self.start_playing(ctx))
 
     async def close(self):
-        self.songs_folder.cleanup()
+        self.songs_directory.cleanup()
         await super().close()
 
 
