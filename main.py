@@ -16,7 +16,7 @@ YOUTUBE_PREFIX = 'https://www.youtube.com/watch?v='
 def start_playing(ctx):
     guild_id = ctx.guild.id
 
-    if len(song_queues[guild_id]) > 0:
+    if song_queues[guild_id]:
         voice = ctx.voice_client
         music = song_queues[guild_id].pop(0)
 
@@ -41,7 +41,7 @@ async def play(ctx, *, keyword):
         video_id = keyword.removeprefix(YOUTUBE_PREFIX)
     else:
         search_query = {'search_query': keyword}
-        html = requests.get(f'https://www.youtube.com/results', params=search_query).text
+        html = requests.get('https://www.youtube.com/results', params=search_query).text
         video_id = re.search(r'watch\?v=(\S{11})', html).group(1)
 
     song_path = f'{tempdirname}/{video_id}.m4a'
@@ -69,7 +69,7 @@ async def play(ctx, *, keyword):
 async def queue(ctx):
     guild_id = ctx.guild.id
 
-    if len(song_queues[guild_id]) > 0:
+    if song_queues[guild_id]:
         numbered_list = '\n'.join([f'**{i + 1})** [{song[1]}]({YOUTUBE_PREFIX}{song[0]})'
                                    for i, song in (enumerate(song_queues[guild_id]))])
         queue_message = discord.Embed(title='Queue', description=numbered_list)
