@@ -7,7 +7,7 @@ import yt_dlp
 import re
 
 
-class Chungus(commands.Bot):
+class MusicBot(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix='-')
         self.song_queues = defaultdict(lambda: [])
@@ -89,7 +89,7 @@ class Chungus(commands.Bot):
 
 
 def main():
-    bot = Chungus()
+    bot = MusicBot()
     bot.run(INSERT_TOKEN_HERE)
 
 
