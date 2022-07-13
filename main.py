@@ -11,7 +11,7 @@ class Chungus(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix='-')
         self.song_queues = defaultdict(lambda: [])
-        self.songs_directory = tempfile.TemporaryDirectory()
+        self.video_directory = tempfile.TemporaryDirectory()
         youtube_prefix = 'https://www.youtube.com/watch?v='
 
         @self.command()
@@ -32,18 +32,16 @@ class Chungus(commands.Bot):
             html = requests.get('https://www.youtube.com/results', params=search_query).text
             video_id = re.search(r'/(?:watch\?v=|shorts/)(\S{11})', html).group(1)
 
-            song_path = f'{self.songs_directory.name}/{video_id}.m4a'
-
             ydl_opts = {
                 'format': 'm4a/bestaudio/best',
-                'outtmpl': song_path
+                'outtmpl': f'{self.video_directory.name}/{video_id}.m4a'
             }
 
             with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                 info_dict = ydl.extract_info(f'{youtube_prefix}{video_id}')
                 video_title = info_dict.get('title')
 
-            self.song_queues[guild_id].append((song_path, video_title))
+            self.song_queues[guild_id].append((video_id, video_title))
 
             desc = f'[{video_title}]({youtube_prefix}{video_id})'
             queued_message = discord.Embed(title='Song queued', description=desc)
@@ -57,12 +55,9 @@ class Chungus(commands.Bot):
             guild_id = ctx.guild.id
 
             if self.song_queues[guild_id]:
-                numbered_list = '\n'.join([f'**{i + 1})** [{song[1]}]({youtube_prefix}{song[0]})'
-                                           for i, song in (enumerate(self.song_queues[guild_id]))])
+                numbered_list = '\n'.join([f'**{i + 1})** [{video_title}]({youtube_prefix}{video_id})'
+                                           for i, (video_id, video_title) in (enumerate(self.song_queues[guild_id]))])
                 queue_message = discord.Embed(title='Queue', description=numbered_list)
-                await ctx.channel.send(embed=queue_message)
-            else:
-                queue_message = discord.Embed(description='**There is nothing playing on this server**')
                 await ctx.channel.send(embed=queue_message)
 
         @self.command()
@@ -83,12 +78,13 @@ class Chungus(commands.Bot):
 
         if self.song_queues[guild_id]:
             voice = ctx.voice_client
-            music = self.song_queues[guild_id].pop(0)
+            video_id, _ = self.song_queues[guild_id].pop(0)
+            video_path = f'{self.video_directory.name}/{video_id}.m4a'
 
-            voice.play(discord.FFmpegPCMAudio(music[0]), after=lambda e: self.__start_playing(ctx))
+            voice.play(discord.FFmpegPCMAudio(video_path), after=lambda e: self.__start_playing(ctx))
 
     async def close(self):
-        self.songs_directory.cleanup()
+        self.video_directory.cleanup()
         await super().close()
 
 
