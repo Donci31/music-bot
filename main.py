@@ -55,8 +55,8 @@ class Chungus(commands.Bot):
             guild_id = ctx.guild.id
 
             if self.song_queues[guild_id]:
-                numbered_list = '\n'.join([f'**{i + 1})** [{song_title}]({youtube_prefix}{song_id})'
-                                           for i, (song_id, song_title) in (enumerate(self.song_queues[guild_id]))])
+                numbered_list = '\n'.join([f'**{i})** [{song_title}]({youtube_prefix}{song_id})'
+                                           for i, (song_id, song_title) in enumerate(self.song_queues[guild_id], 1)])
                 queue_message = discord.Embed(title='Queue', description=numbered_list)
                 await ctx.channel.send(embed=queue_message)
 
