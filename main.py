@@ -1,6 +1,8 @@
 import discord
 from discord.ext import commands
 from collections import defaultdict
+import os
+import dotenv
 import tempfile
 import requests
 import yt_dlp
@@ -89,8 +91,10 @@ class MusicBot(commands.Bot):
 
 
 def main():
+    dotenv.load_dotenv()
+    token = os.environ['BOT_TOKEN']
     bot = MusicBot()
-    bot.run(INSERT_TOKEN_HERE)
+    bot.run(token)
 
 
 if __name__ == '__main__':
