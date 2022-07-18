@@ -1,11 +1,11 @@
 import discord
 from discord.ext import commands
 from collections import defaultdict
-import os
-import dotenv
-import tempfile
+from os import environ
+from dotenv import load_dotenv
+from tempfile import TemporaryDirectory
+from yt_dlp import YoutubeDL
 import requests
-import yt_dlp
 import re
 
 
@@ -13,7 +13,7 @@ class MusicBot(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix='-')
         self.song_queues = defaultdict(lambda: [])
-        self.song_directory = tempfile.TemporaryDirectory()
+        self.song_directory = TemporaryDirectory()
         youtube_prefix = 'https://www.youtube.com/watch?v='
 
         @self.command()
@@ -39,7 +39,7 @@ class MusicBot(commands.Bot):
                 'outtmpl': f'{self.song_directory.name}/{song_id}.m4a'
             }
 
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            with YoutubeDL(ydl_opts) as ydl:
                 info_dict = ydl.extract_info(f'{youtube_prefix}{song_id}')
                 song_title = info_dict.get('title')
 
@@ -91,8 +91,8 @@ class MusicBot(commands.Bot):
 
 
 def main():
-    dotenv.load_dotenv()
-    token = os.environ['BOT_TOKEN']
+    load_dotenv()
+    token = environ['BOT_TOKEN']
     bot = MusicBot()
     bot.run(token)
 
