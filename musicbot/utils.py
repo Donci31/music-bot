@@ -11,7 +11,7 @@ YOUTUBE_WATCH_REGEX = re.compile(r'(?:http?s?://)?(?:www\.|m\.)?(?:music.)?youtu
                                  r'(?:feature=\w*\.?\w*)?&?(?:\?v=|/)([\w-]{11})(?:\S+)?')
 
 
-def get_link(song_id):
+def get_url(song_id):
     return f'https://www.youtube.com/watch?v={song_id}'
 
 

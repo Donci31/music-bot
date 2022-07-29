@@ -39,7 +39,7 @@ class MusicBot(commands.Bot):
                 else:
                     song_id = utils.keyword_search(keyword)
 
-                video = YouTube(utils.get_link(song_id))
+                video = YouTube(utils.get_url(song_id))
                 await self._add_song(ctx, video)
 
         @self.command()
@@ -48,7 +48,7 @@ class MusicBot(commands.Bot):
             channel = ctx.channel
 
             if self.song_queues[guild_id]:
-                numbered_list = '\n'.join([f'**{i})** [{song.song_title}]({utils.get_link(song.song_id)})'
+                numbered_list = '\n'.join([f'**{i})** [{song.song_title}]({utils.get_url(song.song_id)})'
                                            for i, song in enumerate(self.song_queues[guild_id], 1)])
                 queue_message = discord.Embed(title='Queue', description=numbered_list)
                 await channel.send(embed=queue_message)
@@ -93,7 +93,7 @@ class MusicBot(commands.Bot):
         utils.download_song(video, path=self.song_directory.name)
         new_song = Song(voice, video.video_id, video.title)
 
-        desc = f'[{new_song.song_title}]({utils.get_link(new_song.song_id)})'
+        desc = f'[{new_song.song_title}]({utils.get_url(new_song.song_id)})'
         queued_message = discord.Embed(title='Song queued', description=desc)
         await channel.send(embed=queued_message)
 
