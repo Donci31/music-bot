@@ -7,3 +7,4 @@ class Song:
     voice: VoiceClient
     song_id: str
     song_title: str
+    song_length: int

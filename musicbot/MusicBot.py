@@ -4,7 +4,7 @@ from collections import defaultdict
 from tempfile import TemporaryDirectory
 from pytube import YouTube, Playlist
 
-import musicbot.utils as utils
+from musicbot import utils
 from .utils import YOUTUBE_WATCH_REGEX, YOUTUBE_PLAYLIST_REGEX
 from .Song import Song
 
@@ -22,7 +22,7 @@ class MusicBot(commands.Bot):
                 await ctx.channel.send(embed=join_message)
                 return
 
-            if ctx.voice_client is None:
+            if ctx.voice_client is None or not ctx.voice_client.is_connected():
                 voice_channel = ctx.author.voice.channel
                 await voice_channel.connect()
 
@@ -48,7 +48,8 @@ class MusicBot(commands.Bot):
             channel = ctx.channel
 
             if self.song_queues[guild_id]:
-                numbered_list = '\n'.join([f'**{i})** [{song.song_title}]({utils.get_url(song.song_id)})'
+                numbered_list = '\n'.join([f'**{i})** [{song.song_title}]({utils.get_url(song.song_id)}) '
+                                           f'``{utils.time_format(song.song_length)}``'
                                            for i, song in enumerate(self.song_queues[guild_id], 1)])
                 queue_message = discord.Embed(title='Queue', description=numbered_list)
                 await channel.send(embed=queue_message)
@@ -80,13 +81,14 @@ class MusicBot(commands.Bot):
         guild_id = ctx.guild.id
         channel = ctx.channel
 
-        desc = f'**{playlist.length}** songs queued from playlist [{playlist.title}]({playlist.playlist_url})'
+        desc = f'**{playlist.length}** songs queued from playlist [{playlist.title}]({playlist.playlist_url}) ' \
+               f'``{utils.time_format(sum(video.length for video in playlist.videos))}``'
         queued_message = discord.Embed(title='Songs queued', description=desc)
         await channel.send(embed=queued_message)
 
         for video in playlist.videos:
             utils.download_song(video, path=self.song_directory.name)
-            new_song = Song(voice, video.video_id, video.title)
+            new_song = Song(voice, video.video_id, video.title, video.length)
             self._add_to_queue(guild_id, new_song)
 
     async def _add_song(self, ctx, video):
@@ -95,9 +97,10 @@ class MusicBot(commands.Bot):
         channel = ctx.channel
 
         utils.download_song(video, path=self.song_directory.name)
-        new_song = Song(voice, video.video_id, video.title)
+        new_song = Song(voice, video.video_id, video.title, video.length)
 
-        desc = f'[{new_song.song_title}]({utils.get_url(new_song.song_id)})'
+        desc = f'[{new_song.song_title}]({utils.get_url(new_song.song_id)}) ' \
+               f'``{utils.time_format(new_song.song_length)}``'
         queued_message = discord.Embed(title='Song queued', description=desc)
         await channel.send(embed=queued_message)
 
