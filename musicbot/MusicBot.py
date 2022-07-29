@@ -68,8 +68,12 @@ class MusicBot(commands.Bot):
 
         @self.command()
         async def stop(ctx):
-            await clear(ctx)
-            await skip(ctx)
+            guild_id = ctx.guild.id
+            voice = ctx.voice_client
+
+            self.song_queues[guild_id].clear()
+            if voice is not None:
+                voice.stop()
 
     async def _add_playlist(self, ctx, playlist):
         voice = ctx.voice_client
