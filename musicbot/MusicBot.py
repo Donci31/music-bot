@@ -4,9 +4,9 @@ from collections import defaultdict
 from tempfile import TemporaryDirectory
 from pytube import YouTube, Playlist
 
-import utils
-from utils import YOUTUBE_WATCH_REGEX, YOUTUBE_PLAYLIST_REGEX
-from Song import Song
+import musicbot.utils as utils
+from .utils import YOUTUBE_WATCH_REGEX, YOUTUBE_PLAYLIST_REGEX
+from .Song import Song
 
 
 class MusicBot(commands.Bot):
@@ -26,15 +26,11 @@ class MusicBot(commands.Bot):
                 voice_channel = ctx.author.voice.channel
                 await voice_channel.connect()
 
-            voice = ctx.voice_client
-            guild_id = ctx.guild.id
-            channel = ctx.channel
-
             youtube_playlist_match = YOUTUBE_PLAYLIST_REGEX.match(keyword)
 
             if youtube_playlist_match:
                 playlist = Playlist(youtube_playlist_match.group(0))
-                await self._add_playlist(guild_id, voice, channel, playlist)
+                await self._add_playlist(ctx, playlist)
             else:
                 youtube_link_match = YOUTUBE_WATCH_REGEX.match(keyword)
 
@@ -44,7 +40,7 @@ class MusicBot(commands.Bot):
                     song_id = utils.keyword_search(keyword)
 
                 video = YouTube(utils.get_link(song_id))
-                await self._add_song(guild_id, voice, channel, video)
+                await self._add_song(ctx, video)
 
         @self.command()
         async def queue(ctx):
@@ -75,7 +71,11 @@ class MusicBot(commands.Bot):
             await clear(ctx)
             await skip(ctx)
 
-    async def _add_playlist(self, guild_id, voice, channel, playlist):
+    async def _add_playlist(self, ctx, playlist):
+        voice = ctx.voice_client
+        guild_id = ctx.guild.id
+        channel = ctx.channel
+
         desc = f'**{playlist.length}** songs queued from playlist [{playlist.title}]({playlist.playlist_url})'
         queued_message = discord.Embed(title='Songs queued', description=desc)
         await channel.send(embed=queued_message)
@@ -85,7 +85,11 @@ class MusicBot(commands.Bot):
             new_song = Song(voice, video.video_id, video.title)
             self._add_to_queue(guild_id, new_song)
 
-    async def _add_song(self, guild_id, voice, channel, video):
+    async def _add_song(self, ctx, video):
+        voice = ctx.voice_client
+        guild_id = ctx.guild.id
+        channel = ctx.channel
+
         utils.download_song(video, path=self.song_directory.name)
         new_song = Song(voice, video.video_id, video.title)
 

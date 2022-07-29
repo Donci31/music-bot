@@ -1,7 +1,7 @@
 from os import environ
 from dotenv import load_dotenv
 
-from MusicBot import MusicBot
+from musicbot import MusicBot
 
 
 def main():
