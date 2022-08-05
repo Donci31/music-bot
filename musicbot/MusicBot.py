@@ -25,13 +25,13 @@ class MusicBot(commands.Bot):
                 voice_channel = ctx.author.voice.channel
                 await voice_channel.connect()
 
-            youtube_playlist_match = YOUTUBE_PLAYLIST_REGEX.match(keyword)
+            youtube_playlist_match = YOUTUBE_PLAYLIST_REGEX.fullmatch(keyword)
 
             if youtube_playlist_match:
                 playlist = Playlist(youtube_playlist_match.group(0))
                 await self._add_playlist(ctx, playlist)
             else:
-                youtube_link_match = YOUTUBE_WATCH_REGEX.match(keyword)
+                youtube_link_match = YOUTUBE_WATCH_REGEX.fullmatch(keyword)
 
                 if youtube_link_match:
                     song_id = youtube_link_match.group(1)

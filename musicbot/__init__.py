@@ -1,1 +1,1 @@
-from .MusicBot import MusicBot
+from musicbot.MusicBot import MusicBot
