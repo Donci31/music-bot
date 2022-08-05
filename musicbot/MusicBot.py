@@ -37,8 +37,8 @@ class MusicBot(commands.Bot):
                 else:
                     song_id = utils.keyword_search(keyword)
 
-                video = YouTube(utils.get_url(song_id))
-                await self._add_song(ctx, video)
+                song = YouTube(utils.get_song_url(song_id))
+                await self._add_song(ctx, song)
 
         @self.command()
         async def queue(ctx):
@@ -46,7 +46,7 @@ class MusicBot(commands.Bot):
             channel = ctx.channel
 
             if self.song_queues[guild_id]:
-                numbered_list = '\n'.join([f'**{i})** [{song.title}]({utils.get_url(song.video_id)}) '
+                numbered_list = '\n'.join([f'**{i})** [{song.title}]({utils.get_song_url(song.video_id)}) '
                                            f'``{utils.time_format(song.length)}``'
                                            for i, song in enumerate(self.song_queues[guild_id][:10], 1)])
                 await utils.send_embed(channel=channel, title='Queue', description=numbered_list)
@@ -85,19 +85,19 @@ class MusicBot(commands.Bot):
         for video in playlist.videos:
             self._add_to_queue(voice, guild_id, video)
 
-    async def _add_song(self, ctx, video):
+    async def _add_song(self, ctx, song):
         voice = ctx.voice_client
         guild_id = ctx.guild.id
         channel = ctx.channel
 
-        desc = (f'[{video.title}]({utils.get_url(video.video_id)}) '
-                f'``{utils.time_format(video.length)}``')
+        desc = (f'[{song.title}]({utils.get_song_url(song.video_id)}) '
+                f'``{utils.time_format(song.length)}``')
         await utils.send_embed(channel=channel, title='Song queued', description=desc)
 
-        self._add_to_queue(voice, guild_id, video)
+        self._add_to_queue(voice, guild_id, song)
 
-    def _add_to_queue(self, voice, guild_id, new_song):
-        self.song_queues[guild_id].append(new_song)
+    def _add_to_queue(self, voice, guild_id, song):
+        self.song_queues[guild_id].append(song)
 
         if not voice.is_playing():
             self._start_playing(voice, guild_id)
