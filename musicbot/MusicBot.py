@@ -1,4 +1,4 @@
-import discord
+from discord import FFmpegPCMAudio
 from discord.ext import commands
 from collections import defaultdict
 from tempfile import TemporaryDirectory
@@ -18,8 +18,7 @@ class MusicBot(commands.Bot):
         @self.command()
         async def play(ctx, *, keyword):
             if ctx.author.voice is None:
-                join_message = discord.Embed(description='**Join a voice channel!**')
-                await ctx.channel.send(embed=join_message)
+                await utils.send_embed(channel=ctx.channel, description='**Join a voice channel!**')
                 return
 
             if ctx.voice_client is None or not ctx.voice_client.is_connected():
@@ -51,8 +50,7 @@ class MusicBot(commands.Bot):
                 numbered_list = '\n'.join([f'**{i})** [{song.song_title}]({utils.get_url(song.song_id)}) '
                                            f'``{utils.time_format(song.song_length)}``'
                                            for i, song in enumerate(self.song_queues[guild_id], 1)])
-                queue_message = discord.Embed(title='Queue', description=numbered_list)
-                await channel.send(embed=queue_message)
+                await utils.send_embed(channel=channel, title='Queue', description=numbered_list)
 
         @self.command()
         async def skip(ctx):
@@ -81,10 +79,9 @@ class MusicBot(commands.Bot):
         guild_id = ctx.guild.id
         channel = ctx.channel
 
-        desc = f'**{playlist.length}** songs queued from playlist [{playlist.title}]({playlist.playlist_url}) ' \
-               f'``{utils.time_format(sum(video.length for video in playlist.videos))}``'
-        queued_message = discord.Embed(title='Songs queued', description=desc)
-        await channel.send(embed=queued_message)
+        desc = (f'**{playlist.length}** songs queued from playlist [{playlist.title}]({playlist.playlist_url}) '
+                f'``{utils.time_format(sum(video.length for video in playlist.videos))}``')
+        await utils.send_embed(channel=channel, title='Songs queued', description=desc)
 
         for video in playlist.videos:
             utils.download_song(video, path=self.song_directory.name)
@@ -99,10 +96,9 @@ class MusicBot(commands.Bot):
         utils.download_song(video, path=self.song_directory.name)
         new_song = Song(voice, video.video_id, video.title, video.length)
 
-        desc = f'[{new_song.song_title}]({utils.get_url(new_song.song_id)}) ' \
-               f'``{utils.time_format(new_song.song_length)}``'
-        queued_message = discord.Embed(title='Song queued', description=desc)
-        await channel.send(embed=queued_message)
+        desc = (f'[{new_song.song_title}]({utils.get_url(new_song.song_id)}) '
+                f'``{utils.time_format(new_song.song_length)}``')
+        await utils.send_embed(channel=channel, title='Song queued', description=desc)
 
         self._add_to_queue(guild_id, new_song)
 
@@ -119,7 +115,7 @@ class MusicBot(commands.Bot):
             song_path = f'{self.song_directory.name}/{new_song.song_id}.mp4'
             voice = new_song.voice
 
-            voice.play(discord.FFmpegPCMAudio(song_path), after=lambda e: self._start_playing(guild_id))
+            voice.play(FFmpegPCMAudio(song_path), after=lambda e: self._start_playing(guild_id))
 
     async def close(self):
         self.song_directory.cleanup()

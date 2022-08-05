@@ -1,5 +1,7 @@
 import re
 import requests
+from discord import Embed
+from discord.embeds import EmptyEmbed
 from datetime import datetime
 
 
@@ -24,7 +26,7 @@ def download_song(video, path):
 def keyword_search(keyword):
     search_query = {'search_query': keyword}
     html = requests.get('https://www.youtube.com/results', params=search_query).text
-    song_id = re.search(r'/(?:watch\?v=|shorts/)([^"]+)', html).group(1)
+    song_id = re.search(r'/(?:watch\?v=|shorts/)([\w-]{11})', html).group(1)
 
     return song_id
 
@@ -34,3 +36,8 @@ def time_format(secs):
         return datetime.fromtimestamp(secs).strftime('%M:%S')
     else:
         return datetime.fromtimestamp(secs).strftime('%H:%M:%S')
+
+
+async def send_embed(channel, title=EmptyEmbed, description=EmptyEmbed):
+    queued_message = Embed(title=title, description=description)
+    await channel.send(embed=queued_message)
