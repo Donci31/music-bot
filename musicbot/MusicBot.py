@@ -5,8 +5,8 @@ from tempfile import TemporaryDirectory
 from pytube import YouTube, Playlist
 
 from musicbot import utils
-from .utils import YOUTUBE_WATCH_REGEX, YOUTUBE_PLAYLIST_REGEX
-from .Song import Song
+from musicbot.utils import YOUTUBE_WATCH_REGEX, YOUTUBE_PLAYLIST_REGEX
+from musicbot import Song
 
 
 class MusicBot(commands.Bot):
