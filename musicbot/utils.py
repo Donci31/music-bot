@@ -18,11 +18,6 @@ def get_song_url(song_id):
     return f'https://www.youtube.com/watch?v={song_id}'
 
 
-def download_song(video, path):
-    song = video.streams.filter(only_audio=True).first()
-    song.download(output_path=f'{path}', filename=f'{video.video_id}.mp4')
-
-
 def keyword_search(keyword):
     search_query = {'search_query': keyword}
     html = requests.get('https://www.youtube.com/results', params=search_query).text
