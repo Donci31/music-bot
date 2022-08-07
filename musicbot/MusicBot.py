@@ -74,9 +74,9 @@ class MusicBot(commands.Bot):
                 voice.stop()
 
     async def _add_playlist(self, ctx, playlist):
-        desc = (f'**{playlist.length}** songs queued from playlist [{playlist.title}]({playlist.playlist_url}) '
+        desc = (f'[{playlist.title}]({playlist.playlist_url}) | queued **15** songs '
                 f'``{utils.time_format(sum(video.length for video in playlist.videos))}``')
-        await utils.send_embed(channel=ctx.channel, title='Songs queued', description=desc)
+        await utils.send_embed(channel=ctx.channel, title='Playlist queued', description=desc)
 
         for video in playlist.videos:
             self._add_to_queue(ctx, video)
