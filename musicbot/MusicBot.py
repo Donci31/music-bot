@@ -1,3 +1,4 @@
+import os
 from discord import FFmpegPCMAudio
 from discord.ext import commands
 from collections import defaultdict
@@ -104,7 +105,7 @@ class MusicBot(commands.Bot):
     def _download_song(self, video):
         song = video.streams.filter(only_audio=True).first()
         song.download(output_path=self.song_directory.name, filename=f'{video.video_id}.mp4')
-        return f'{self.song_directory.name}/{video.video_id}.mp4'
+        return os.path.join(self.song_directory.name, f'{video.video_id}.mp4')
 
     def _start_playing(self, voice, guild_id):
         if self.song_queues[guild_id]:

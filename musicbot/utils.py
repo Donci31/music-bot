@@ -1,6 +1,6 @@
+import discord
 import re
 import requests
-from discord import Embed
 from discord.embeds import EmptyEmbed
 from datetime import datetime
 
@@ -34,5 +34,5 @@ def time_format(secs):
 
 
 async def send_embed(channel, title=EmptyEmbed, description=EmptyEmbed):
-    queued_message = Embed(title=title, description=description)
+    queued_message = discord.Embed(title=title, description=description)
     await channel.send(embed=queued_message)
