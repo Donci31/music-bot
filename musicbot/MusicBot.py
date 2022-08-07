@@ -1,5 +1,5 @@
+import discord
 import os
-from discord import FFmpegPCMAudio
 from discord.ext import commands
 from collections import defaultdict
 from tempfile import TemporaryDirectory
@@ -18,7 +18,8 @@ class MusicBot(commands.Bot):
         @self.command()
         async def play(ctx, *, keyword):
             if ctx.author.voice is None:
-                await utils.send_embed(channel=ctx.channel, description='**Join a voice channel!**')
+                embed_message = discord.Embed(description='**Join a voice channel!**')
+                await ctx.channel.send(embed=embed_message)
                 return
 
             if ctx.voice_client is None or not ctx.voice_client.is_connected():
@@ -30,7 +31,7 @@ class MusicBot(commands.Bot):
             if youtube_playlist_match:
                 playlist_id = youtube_playlist_match.group(1)
 
-                playlist = Playlist(utils.get_playlist_url(playlist_id))
+                playlist = Playlist(f'https://www.youtube.com/playlist?list={playlist_id}')
                 await self._add_playlist(ctx, playlist)
             else:
                 youtube_link_match = YOUTUBE_WATCH_REGEX.fullmatch(keyword)
@@ -40,7 +41,7 @@ class MusicBot(commands.Bot):
                 else:
                     song_id = utils.keyword_search(keyword)
 
-                song = YouTube(utils.get_song_url(song_id))
+                song = YouTube(f'https://www.youtube.com/watch?v={song_id}')
                 await self._add_song(ctx, song)
 
         @self.command()
@@ -52,7 +53,8 @@ class MusicBot(commands.Bot):
                 numbered_list = '\n'.join([f'**{i})** [{song.title}]({song.watch_url}) '
                                            f'``{utils.time_format(song.length)}``'
                                            for i, song in enumerate(self.song_queues[guild_id][:10], 1)])
-                await utils.send_embed(channel=channel, title='Queue', description=numbered_list)
+                embed_message = discord.Embed(title='Queue', description=numbered_list)
+                await channel.send(embed=embed_message)
 
         @self.command()
         async def skip(ctx):
@@ -83,7 +85,8 @@ class MusicBot(commands.Bot):
 
         desc = (f'[{playlist.title}]({playlist.playlist_url}) | queued **15** songs '
                 f'``{utils.time_format(sum(video.length for video in playlist.videos))}``')
-        await utils.send_embed(channel=channel, title='Playlist queued', description=desc)
+        embed_message = discord.Embed(title='Playlist queued', description=desc)
+        await channel.send(embed=embed_message)
 
         self.song_queues[guild_id].extend(playlist.videos)
 
@@ -95,9 +98,9 @@ class MusicBot(commands.Bot):
         guild_id = ctx.guild.id
         voice = ctx.voice_client
 
-        desc = (f'[{song.title}]({song.watch_url}) '
-                f'``{utils.time_format(song.length)}``')
-        await utils.send_embed(channel=channel, title='Song queued', description=desc)
+        desc = f'[{song.title}]({song.watch_url}) ``{utils.time_format(song.length)}``'
+        embed_message = discord.Embed(title='Song queued', description=desc)
+        await channel.send(embed=embed_message)
 
         self.song_queues[guild_id].append(song)
 
@@ -114,7 +117,7 @@ class MusicBot(commands.Bot):
             new_song = self.song_queues[guild_id].pop(0)
             song_path = self._download_song(new_song)
 
-            voice.play(FFmpegPCMAudio(song_path), after=lambda e: self._start_playing(voice, guild_id))
+            voice.play(discord.FFmpegPCMAudio(song_path), after=lambda e: self._start_playing(voice, guild_id))
 
     async def close(self):
         self.song_directory.cleanup()
