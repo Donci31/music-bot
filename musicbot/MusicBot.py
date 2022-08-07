@@ -28,7 +28,9 @@ class MusicBot(commands.Bot):
             youtube_playlist_match = YOUTUBE_PLAYLIST_REGEX.fullmatch(keyword)
 
             if youtube_playlist_match:
-                playlist = Playlist(youtube_playlist_match.group(0))
+                playlist_id = youtube_playlist_match.group(1)
+
+                playlist = Playlist(utils.get_playlist_url(playlist_id))
                 await self._add_playlist(ctx, playlist)
             else:
                 youtube_link_match = YOUTUBE_WATCH_REGEX.fullmatch(keyword)
@@ -47,7 +49,7 @@ class MusicBot(commands.Bot):
             channel = ctx.channel
 
             if self.song_queues[guild_id]:
-                numbered_list = '\n'.join([f'**{i})** [{song.title}]({utils.get_song_url(song.video_id)}) '
+                numbered_list = '\n'.join([f'**{i})** [{song.title}]({song.watch_url}) '
                                            f'``{utils.time_format(song.length)}``'
                                            for i, song in enumerate(self.song_queues[guild_id][:10], 1)])
                 await utils.send_embed(channel=channel, title='Queue', description=numbered_list)
@@ -93,7 +95,7 @@ class MusicBot(commands.Bot):
         guild_id = ctx.guild.id
         voice = ctx.voice_client
 
-        desc = (f'[{song.title}]({utils.get_song_url(song.video_id)}) '
+        desc = (f'[{song.title}]({song.watch_url}) '
                 f'``{utils.time_format(song.length)}``')
         await utils.send_embed(channel=channel, title='Song queued', description=desc)
 

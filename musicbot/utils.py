@@ -14,6 +14,10 @@ YOUTUBE_WATCH_REGEX = re.compile(r'(?:http?s?://)?(?:www\.|m\.)?(?:music.)?youtu
                                  r'(?:feature=\w*\.?\w*)?&?(?:\?v=|/)([\w-]{11})(?:\S+)?')
 
 
+def get_playlist_url(playlist_id):
+    return f'https://www.youtube.com/playlist?list={playlist_id}'
+
+
 def get_song_url(song_id):
     return f'https://www.youtube.com/watch?v={song_id}'
 
