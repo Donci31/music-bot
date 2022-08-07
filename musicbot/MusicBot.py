@@ -104,12 +104,12 @@ class MusicBot(commands.Bot):
     def _download_song(self, video):
         song = video.streams.filter(only_audio=True).first()
         song.download(output_path=self.song_directory.name, filename=f'{video.video_id}.mp4')
+        return f'{self.song_directory.name}/{video.video_id}.mp4'
 
     def _start_playing(self, voice, guild_id):
         if self.song_queues[guild_id]:
             new_song = self.song_queues[guild_id].pop(0)
-            self._download_song(new_song)
-            song_path = f'{self.song_directory.name}/{new_song.video_id}.mp4'
+            song_path = self._download_song(new_song)
 
             voice.play(FFmpegPCMAudio(song_path), after=lambda e: self._start_playing(voice, guild_id))
 
