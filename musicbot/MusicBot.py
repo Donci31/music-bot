@@ -74,23 +74,27 @@ class MusicBot(commands.Bot):
                 voice.stop()
 
     async def _add_playlist(self, ctx, playlist):
-        desc = (f'[{playlist.title}]({playlist.playlist_url}) | queued **15** songs '
-                f'``{utils.time_format(sum(video.length for video in playlist.videos))}``')
-        await utils.send_embed(channel=ctx.channel, title='Playlist queued', description=desc)
-
-        for video in playlist.videos:
-            self._add_to_queue(ctx, video)
-
-    async def _add_song(self, ctx, song):
-        desc = (f'[{song.title}]({utils.get_song_url(song.video_id)}) '
-                f'``{utils.time_format(song.length)}``')
-        await utils.send_embed(channel=ctx.channel, title='Song queued', description=desc)
-
-        self._add_to_queue(ctx, song)
-
-    def _add_to_queue(self, ctx, song):
+        channel = ctx.channel
         guild_id = ctx.guild.id
         voice = ctx.voice_client
+
+        desc = (f'[{playlist.title}]({playlist.playlist_url}) | queued **15** songs '
+                f'``{utils.time_format(sum(video.length for video in playlist.videos))}``')
+        await utils.send_embed(channel=channel, title='Playlist queued', description=desc)
+
+        self.song_queues[guild_id].extend(playlist.videos)
+
+        if not voice.is_playing():
+            self._start_playing(voice, guild_id)
+
+    async def _add_song(self, ctx, song):
+        channel = ctx.channel
+        guild_id = ctx.guild.id
+        voice = ctx.voice_client
+
+        desc = (f'[{song.title}]({utils.get_song_url(song.video_id)}) '
+                f'``{utils.time_format(song.length)}``')
+        await utils.send_embed(channel=channel, title='Song queued', description=desc)
 
         self.song_queues[guild_id].append(song)
 
