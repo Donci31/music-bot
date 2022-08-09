@@ -208,7 +208,7 @@ class MusicBot(commands.Bot):
 
         self.song_queues[guild_id].extend(playlist.videos)
 
-        desc = f'Queued [{playlist.title}]({playlist.playlist_url}) | **{playlist.length}** songs'
+        desc = f'Queued [{playlist.title}]({playlist.playlist_url}) | **{len(playlist)}** songs'
         embed_message = discord.Embed(description=desc)
         await channel.send(embed=embed_message)
 
