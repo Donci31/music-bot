@@ -1,7 +1,9 @@
 import discord
 import random
 import os
+from discord import VoiceClient
 from discord.ext import commands
+from discord.ext.commands import Context
 from collections import defaultdict
 from tempfile import TemporaryDirectory
 from pytube import YouTube, Playlist
@@ -11,15 +13,15 @@ from musicbot.utils import YOUTUBE_WATCH_REGEX, YOUTUBE_PLAYLIST_REGEX
 
 
 class MusicBot(commands.Bot):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(command_prefix='-')
-        self.song_queues = defaultdict(list)
-        self.song_indexes = defaultdict(int)
-        self.song_directory = TemporaryDirectory()
+        self.song_queues = defaultdict[int, list[YouTube]](list)
+        self.song_indexes = defaultdict[int, int](int)
+        self.song_directory = TemporaryDirectory[str]()
         self.loop_queue = False
 
         @self.command()
-        async def play(ctx, *, keyword):
+        async def play(ctx: Context, *, keyword: str) -> None:
             if ctx.author.voice is None:
                 embed_message = discord.Embed(description='**Join a voice channel!**')
                 await ctx.channel.send(embed=embed_message)
@@ -51,10 +53,10 @@ class MusicBot(commands.Bot):
                 await self._add_song(ctx, song)
 
             if not voice.is_playing():
-                self._start_playing(voice, guild_id)
+                self._start_playing(guild_id, voice)
 
         @self.command()
-        async def queue(ctx):
+        async def queue(ctx: Context) -> None:
             guild_id = ctx.guild.id
             channel = ctx.channel
             index = self.song_indexes[guild_id]
@@ -68,7 +70,7 @@ class MusicBot(commands.Bot):
                 await channel.send(embed=embed_message)
 
         @self.command()
-        async def skip(ctx):
+        async def skip(ctx: Context) -> None:
             voice = ctx.voice_client
             message = ctx.message
 
@@ -78,7 +80,7 @@ class MusicBot(commands.Bot):
             await message.add_reaction('\U0001F44C')
 
         @self.command()
-        async def clear(ctx):
+        async def clear(ctx: Context) -> None:
             guild_id = ctx.guild.id
             message = ctx.message
 
@@ -88,7 +90,7 @@ class MusicBot(commands.Bot):
             await message.add_reaction('\U0001F44C')
 
         @self.command()
-        async def jump(ctx, *, jump_number):
+        async def jump(ctx: Context, *, jump_number: str) -> None:
             guild_id = ctx.guild.id
             voice = ctx.voice_client
             channel = ctx.channel
@@ -107,7 +109,7 @@ class MusicBot(commands.Bot):
                 await channel.send(embed=embed_message)
 
         @self.command()
-        async def loop(ctx):
+        async def loop(ctx: Context) -> None:
             channel = ctx.channel
 
             self.loop_queue = True
@@ -117,7 +119,7 @@ class MusicBot(commands.Bot):
             await channel.send(embed=embed_message)
 
         @self.command()
-        async def unloop(ctx):
+        async def unloop(ctx: Context) -> None:
             channel = ctx.channel
 
             self.loop_queue = False
@@ -127,7 +129,7 @@ class MusicBot(commands.Bot):
             await channel.send(embed=embed_message)
 
         @self.command()
-        async def pause(ctx):
+        async def pause(ctx: Context) -> None:
             voice = ctx.voice_client
             message = ctx.message
 
@@ -137,7 +139,7 @@ class MusicBot(commands.Bot):
             await message.add_reaction('\U000023F8')
 
         @self.command()
-        async def unpause(ctx):
+        async def unpause(ctx: Context) -> None:
             voice = ctx.voice_client
             message = ctx.message
 
@@ -147,7 +149,7 @@ class MusicBot(commands.Bot):
             await message.add_reaction('\U000025B6')
 
         @self.command()
-        async def remove(ctx, *, remove_number):
+        async def remove(ctx: Context, *, remove_number: str) -> None:
             guild_id = ctx.guild.id
             channel = ctx.channel
             queue_length = len(self.song_queues[guild_id])
@@ -163,7 +165,7 @@ class MusicBot(commands.Bot):
                 await channel.send(embed=embed_message)
 
         @self.command()
-        async def shuffle(ctx):
+        async def shuffle(ctx: Context) -> None:
             guild_id = ctx.guild.id
             message = ctx.message
 
@@ -172,7 +174,7 @@ class MusicBot(commands.Bot):
             await message.add_reaction('\U0001F500')
 
         @self.command()
-        async def stop(ctx):
+        async def stop(ctx: Context) -> None:
             guild_id = ctx.guild.id
             voice = ctx.voice_client
             message = ctx.message
@@ -185,7 +187,7 @@ class MusicBot(commands.Bot):
             await message.add_reaction('\U0001F6D1')
 
         @self.command()
-        async def move(ctx, first_number, *, second_number):
+        async def move(ctx: Context, first_number: str, *, second_number: str) -> None:
             guild_id = ctx.guild.id
             channel = ctx.channel
             song_queue = self.song_queues[guild_id]
@@ -202,7 +204,7 @@ class MusicBot(commands.Bot):
                 embed_message = discord.Embed(description=desc)
                 await channel.send(embed=embed_message)
 
-    async def _add_playlist(self, ctx, playlist):
+    async def _add_playlist(self, ctx: Context, playlist: Playlist) -> None:
         channel = ctx.channel
         guild_id = ctx.guild.id
 
@@ -212,7 +214,7 @@ class MusicBot(commands.Bot):
         embed_message = discord.Embed(description=desc)
         await channel.send(embed=embed_message)
 
-    async def _add_song(self, ctx, song):
+    async def _add_song(self, ctx: Context, song: YouTube) -> None:
         channel = ctx.channel
         guild_id = ctx.guild.id
 
@@ -222,24 +224,24 @@ class MusicBot(commands.Bot):
         embed_message = discord.Embed(description=desc)
         await channel.send(embed=embed_message)
 
-    def _download_song(self, video):
+    def _download_song(self, video: YouTube) -> str:
         song = video.streams.filter(only_audio=True).first()
         song.download(output_path=self.song_directory.name, filename=f'{video.video_id}.mp4')
         return os.path.join(self.song_directory.name, f'{video.video_id}.mp4')
 
-    def _start_playing(self, voice, guild_id):
+    def _start_playing(self, guild_id: int, voice: VoiceClient) -> None:
         if self.song_indexes[guild_id] < len(self.song_queues[guild_id]):
             new_song_index = self.song_indexes[guild_id]
             new_song = self.song_queues[guild_id][new_song_index]
             song_path = self._download_song(new_song)
 
-            voice.play(discord.FFmpegPCMAudio(song_path), after=lambda e: self._start_playing(voice, guild_id))
+            voice.play(discord.FFmpegPCMAudio(song_path), after=lambda e: self._start_playing(guild_id, voice))
 
             self.song_indexes[guild_id] += 1
         elif self.loop_queue:
             self.song_indexes[guild_id] = 0
-            self._start_playing(voice, guild_id)
+            self._start_playing(guild_id, voice)
 
-    async def close(self):
+    async def close(self) -> None:
         self.song_directory.cleanup()
         await super().close()

@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from musicbot import MusicBot
 
 
-def main():
+def main() -> None:
     load_dotenv()
     token = environ['BOT_TOKEN']
     bot = MusicBot()
