@@ -134,7 +134,7 @@ class MusicBot(commands.Bot):
             if voice is not None:
                 voice.pause()
 
-            await message.add_reaction('\U0001F44C')
+            await message.add_reaction('\U000023F8')
 
         @self.command()
         async def unpause(ctx):
@@ -144,7 +144,7 @@ class MusicBot(commands.Bot):
             if voice is not None:
                 voice.resume()
 
-            await message.add_reaction('\U0001F44C')
+            await message.add_reaction('\U000025B6')
 
         @self.command()
         async def remove(ctx, *, remove_number):
@@ -182,7 +182,7 @@ class MusicBot(commands.Bot):
             if voice is not None:
                 voice.stop()
 
-            await message.add_reaction('\U0001F44C')
+            await message.add_reaction('\U0001F6D1')
 
         @self.command()
         async def move(ctx, first_number, *, second_number):
