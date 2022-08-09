@@ -58,127 +58,169 @@ class MusicBot(commands.Bot):
             guild_id = ctx.guild.id
             channel = ctx.channel
             index = self.song_indexes[guild_id]
-            song_queue_slice = self.song_queues[guild_id][index:index+10]
+            song_queue_slice = self.song_queues[guild_id][index:index + 10]
 
             if self.song_queues[guild_id]:
-                numbered_list = '\n'.join([f'**{i})** [{song.title}]({song.watch_url}) '
-                                           f'``{utils.time_format(song.length)}``'
-                                           for i, song in enumerate(song_queue_slice, 1)])
-                embed_message = discord.Embed(title='Queue', description=numbered_list)
+                numbered_list = '\n'.join(f'**{i})** [{song.title}]({song.watch_url}) '
+                                          f'``{utils.time_format(song.length)}``'
+                                          for i, song in enumerate(song_queue_slice, 1))
+                embed_message = discord.Embed(description=numbered_list)
                 await channel.send(embed=embed_message)
 
         @self.command()
         async def skip(ctx):
             voice = ctx.voice_client
+            message = ctx.message
 
             if voice is not None:
                 voice.stop()
 
+            await message.add_reaction('\U0001F44C')
+
         @self.command()
         async def clear(ctx):
             guild_id = ctx.guild.id
+            message = ctx.message
 
             self.song_queues[guild_id].clear()
             self.song_indexes[guild_id] = 0
+
+            await message.add_reaction('\U0001F44C')
 
         @self.command()
         async def jump(ctx, *, jump_number):
             guild_id = ctx.guild.id
             voice = ctx.voice_client
+            channel = ctx.channel
             queue_length = len(self.song_queues[guild_id])
 
             if utils.index_check(jump_number, queue_length):
-                self.song_indexes[guild_id] = int(jump_number) - 1
+                index = int(jump_number) - 1
+                song = self.song_queues[guild_id][index]
+
+                self.song_indexes[guild_id] = index
                 if voice is not None:
                     voice.stop()
+
+                desc = f'Jumped to [{song.title}]({song.watch_url})'
+                embed_message = discord.Embed(description=desc)
+                await channel.send(embed=embed_message)
 
         @self.command()
         async def loop(ctx):
             channel = ctx.channel
 
+            self.loop_queue = True
+
             desc = 'Now looping the **queue**'
             embed_message = discord.Embed(description=desc)
             await channel.send(embed=embed_message)
-
-            self.loop_queue = True
 
         @self.command()
         async def unloop(ctx):
             channel = ctx.channel
 
+            self.loop_queue = False
+
             desc = 'Looping is now **disabled**'
             embed_message = discord.Embed(description=desc)
             await channel.send(embed=embed_message)
 
-            self.loop_queue = False
-
         @self.command()
         async def pause(ctx):
             voice = ctx.voice_client
+            message = ctx.message
 
             if voice is not None:
                 voice.pause()
 
+            await message.add_reaction('\U0001F44C')
+
         @self.command()
         async def unpause(ctx):
             voice = ctx.voice_client
+            message = ctx.message
 
             if voice is not None:
                 voice.resume()
 
+            await message.add_reaction('\U0001F44C')
+
         @self.command()
         async def remove(ctx, *, remove_number):
             guild_id = ctx.guild.id
+            channel = ctx.channel
             queue_length = len(self.song_queues[guild_id])
 
             if utils.index_check(remove_number, queue_length):
-                self.song_queues[guild_id].pop(int(remove_number) - 1)
+                index = int(remove_number) - 1
+                song = self.song_queues[guild_id][index]
+
+                self.song_queues[guild_id].pop(index)
+
+                desc = f'Removed [{song.title}]({song.watch_url})'
+                embed_message = discord.Embed(description=desc)
+                await channel.send(embed=embed_message)
 
         @self.command()
         async def shuffle(ctx):
             guild_id = ctx.guild.id
+            message = ctx.message
 
             random.shuffle(self.song_queues[guild_id])
+
+            await message.add_reaction('\U0001F500')
 
         @self.command()
         async def stop(ctx):
             guild_id = ctx.guild.id
             voice = ctx.voice_client
+            message = ctx.message
 
             self.song_queues[guild_id].clear()
             self.song_indexes[guild_id] = 0
             if voice is not None:
                 voice.stop()
 
+            await message.add_reaction('\U0001F44C')
+
         @self.command()
         async def move(ctx, first_number, *, second_number):
             guild_id = ctx.guild.id
+            channel = ctx.channel
             song_queue = self.song_queues[guild_id]
             queue_length = len(song_queue)
 
             if utils.index_check(first_number, queue_length) and utils.index_check(second_number, queue_length):
-                song_queue.insert(int(second_number) - 1, song_queue.pop(int(first_number) - 1))
+                first_index = int(first_number) - 1
+                second_index = int(second_number) - 1
+                song = song_queue[first_index]
+
+                song_queue.insert(second_index, song_queue.pop(first_index))
+
+                desc = f'Moved [{song.title}]({song.watch_url}) to position **{second_index}**'
+                embed_message = discord.Embed(description=desc)
+                await channel.send(embed=embed_message)
 
     async def _add_playlist(self, ctx, playlist):
         channel = ctx.channel
         guild_id = ctx.guild.id
 
-        desc = (f'[{playlist.title}]({playlist.playlist_url}) | queued **15** songs '
-                f'``{utils.time_format(sum(video.length for video in playlist.videos))}``')
-        embed_message = discord.Embed(title='Playlist queued', description=desc)
-        await channel.send(embed=embed_message)
-
         self.song_queues[guild_id].extend(playlist.videos)
+
+        desc = f'Queued [{playlist.title}]({playlist.playlist_url}) | **{playlist.length}** songs'
+        embed_message = discord.Embed(description=desc)
+        await channel.send(embed=embed_message)
 
     async def _add_song(self, ctx, song):
         channel = ctx.channel
         guild_id = ctx.guild.id
 
-        desc = f'[{song.title}]({song.watch_url}) ``{utils.time_format(song.length)}``'
-        embed_message = discord.Embed(title='Song queued', description=desc)
-        await channel.send(embed=embed_message)
-
         self.song_queues[guild_id].append(song)
+
+        desc = f'Queued [{song.title}]({song.watch_url}) ``{utils.time_format(song.length)}``'
+        embed_message = discord.Embed(description=desc)
+        await channel.send(embed=embed_message)
 
     def _download_song(self, video):
         song = video.streams.filter(only_audio=True).first()
