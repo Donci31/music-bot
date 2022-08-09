@@ -1,6 +1,6 @@
 import re
 import requests
-from datetime import datetime
+import time
 
 
 YOUTUBE_PLAYLIST_REGEX = re.compile(r'(?:http?s?://)?(?:www\.|m\.)?(?:music.)?youtu\.?be(?:\.com)?'
@@ -23,6 +23,10 @@ def keyword_search(keyword):
 
 def time_format(secs):
     if secs < 3600:
-        return datetime.fromtimestamp(secs).strftime('%M:%S')
+        return time.strftime('%M:%S', time.gmtime(secs))
     else:
-        return datetime.fromtimestamp(secs).strftime('%H:%M:%S')
+        return time.strftime('%H:%M:%S', time.gmtime(secs))
+
+
+def index_check(index, array_size):
+    return index.isnumeric() and int(index) in range(1, array_size + 1)
