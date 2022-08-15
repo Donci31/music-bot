@@ -65,7 +65,7 @@ class MusicBot(commands.Bot):
             if self.song_queues[guild_id]:
                 numbered_list = '\n'.join(f'**{i})** [{song.title}]({song.watch_url}) '
                                           f'``{utils.time_format(song.length)}``'
-                                          for i, song in enumerate(song_queue_slice, 1))
+                                          for i, song in enumerate(song_queue_slice, start=1))
                 embed_message = discord.Embed(description=numbered_list)
                 await channel.send(embed=embed_message)
 
