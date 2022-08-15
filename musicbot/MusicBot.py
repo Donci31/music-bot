@@ -34,17 +34,13 @@ class MusicBot(commands.Bot):
             voice = ctx.voice_client
             guild_id = ctx.guild.id
 
-            youtube_playlist_match = YOUTUBE_PLAYLIST_REGEX.fullmatch(keyword)
-
-            if youtube_playlist_match:
+            if youtube_playlist_match := YOUTUBE_PLAYLIST_REGEX.fullmatch(keyword):
                 playlist_id = youtube_playlist_match.group(1)
 
                 playlist = Playlist(f'https://www.youtube.com/playlist?list={playlist_id}')
                 await self._add_playlist(ctx, playlist)
             else:
-                youtube_link_match = YOUTUBE_WATCH_REGEX.fullmatch(keyword)
-
-                if youtube_link_match:
+                if youtube_link_match := YOUTUBE_WATCH_REGEX.fullmatch(keyword):
                     song_id = youtube_link_match.group(1)
                 else:
                     song_id = utils.keyword_search(keyword)
@@ -60,9 +56,8 @@ class MusicBot(commands.Bot):
             guild_id = ctx.guild.id
             channel = ctx.channel
             index = self.song_indexes[guild_id]
-            song_queue_slice = self.song_queues[guild_id][index:index + 10]
 
-            if self.song_queues[guild_id]:
+            if song_queue_slice := self.song_queues[guild_id][index:index+10]:
                 numbered_list = '\n'.join(f'**{i})** [{song.title}]({song.watch_url}) '
                                           f'``{utils.time_format(song.length)}``'
                                           for i, song in enumerate(song_queue_slice, start=1))
@@ -94,9 +89,8 @@ class MusicBot(commands.Bot):
             guild_id = ctx.guild.id
             voice = ctx.voice_client
             channel = ctx.channel
-            queue_length = len(self.song_queues[guild_id])
 
-            if utils.index_check(jump_number, queue_length):
+            if utils.index_check(jump_number, len(self.song_queues[guild_id])):
                 index = int(jump_number) - 1
                 song = self.song_queues[guild_id][index]
 
@@ -152,9 +146,8 @@ class MusicBot(commands.Bot):
         async def remove(ctx: Context, *, remove_number: str) -> None:
             guild_id = ctx.guild.id
             channel = ctx.channel
-            queue_length = len(self.song_queues[guild_id])
 
-            if utils.index_check(remove_number, queue_length):
+            if utils.index_check(remove_number, len(self.song_queues[guild_id])):
                 index = int(remove_number) - 1
                 song = self.song_queues[guild_id][index]
 
@@ -230,14 +223,11 @@ class MusicBot(commands.Bot):
         return os.path.join(self.song_directory.name, f'{video.video_id}.mp4')
 
     def _start_playing(self, guild_id: int, voice: VoiceClient) -> None:
-        if self.song_indexes[guild_id] < len(self.song_queues[guild_id]):
-            new_song_index = self.song_indexes[guild_id]
-            new_song = self.song_queues[guild_id][new_song_index]
-            song_path = self._download_song(new_song)
+        if (cur_index := self.song_indexes[guild_id]) < len(cur_queue := self.song_queues[guild_id]):
+            self.song_indexes[guild_id] += 1
+            song_path = self._download_song(cur_queue[cur_index])
 
             voice.play(discord.FFmpegPCMAudio(song_path), after=lambda e: self._start_playing(guild_id, voice))
-
-            self.song_indexes[guild_id] += 1
         elif self.loop_queue:
             self.song_indexes[guild_id] = 0
             self._start_playing(guild_id, voice)
