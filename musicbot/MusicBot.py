@@ -6,7 +6,6 @@ from discord.ext import commands
 from discord.ext.commands import Context
 from collections import defaultdict
 from tempfile import TemporaryDirectory
-from pymaybe import maybe
 from pytube import YouTube, Playlist
 
 from musicbot import utils
@@ -70,9 +69,11 @@ class MusicBot(commands.Bot):
             voice = ctx.voice_client
             message = ctx.message
 
-            maybe(voice).stop()
+            if voice is not None:
+                voice.stop()
 
-            await maybe(message).add_reaction('\U0001F44C')
+            if message is not None:
+                await message.add_reaction('\U0001F44C')
 
         @self.command()
         async def clear(ctx: Context) -> None:
@@ -82,7 +83,8 @@ class MusicBot(commands.Bot):
             self.song_queues[guild_id].clear()
             self.song_indexes[guild_id] = 0
 
-            await maybe(message).add_reaction('\U0001F44C')
+            if message is not None:
+                await message.add_reaction('\U0001F44C')
 
         @self.command()
         async def jump(ctx: Context, *, jump_number: str) -> None:
@@ -95,7 +97,8 @@ class MusicBot(commands.Bot):
                 song = self.song_queues[guild_id][index]
 
                 self.song_indexes[guild_id] = index
-                maybe(voice).stop()
+                if voice is not None:
+                    voice.stop()
 
                 desc = f'Jumped to [{song.title}]({song.watch_url})'
                 embed_message = discord.Embed(description=desc)
@@ -126,18 +129,22 @@ class MusicBot(commands.Bot):
             voice = ctx.voice_client
             message = ctx.message
 
-            maybe(voice).pause()
+            if voice is not None:
+                voice.pause()
 
-            await maybe(message).add_reaction('\U000023F8')
+            if message is not None:
+                await message.add_reaction('\U000023F8')
 
         @self.command()
         async def unpause(ctx: Context) -> None:
             voice = ctx.voice_client
             message = ctx.message
 
-            maybe(voice).resume()
+            if voice is not None:
+                voice.resume()
 
-            await maybe(message).add_reaction('\U000025B6')
+            if message is not None:
+                await message.add_reaction('\U000025B6')
 
         @self.command()
         async def remove(ctx: Context, *, remove_number: str) -> None:
@@ -161,7 +168,8 @@ class MusicBot(commands.Bot):
 
             random.shuffle(self.song_queues[guild_id])
 
-            await maybe(message).add_reaction('\U0001F500')
+            if message is not None:
+                await message.add_reaction('\U0001F500')
 
         @self.command()
         async def stop(ctx: Context) -> None:
@@ -171,9 +179,11 @@ class MusicBot(commands.Bot):
 
             self.song_queues[guild_id].clear()
             self.song_indexes[guild_id] = 0
-            maybe(voice).stop()
+            if voice is not None:
+                voice.stop()
 
-            await maybe(message).add_reaction('\U0001F6D1')
+            if message is not None:
+                await message.add_reaction('\U0001F6D1')
 
         @self.command()
         async def move(ctx: Context, first_number: str, *, second_number: str) -> None:
