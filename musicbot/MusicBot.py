@@ -55,13 +55,20 @@ class MusicBot(commands.Bot):
         async def queue(ctx: Context) -> None:
             guild_id = ctx.guild.id
             channel = ctx.channel
-            index_offset = round(self.song_indexes[guild_id] - 1, ndigits=-1)
+            cur_index = self.song_indexes[guild_id] - 1
+            index_offset = cur_index // 10 * 10
 
             if song_queue_slice := self.song_queues[guild_id][index_offset:index_offset + 10]:
-                numbered_list = '\n'.join(f'**{i})** [{song.title}]({song.watch_url}) '
-                                          f'``{utils.time_format(song.length)}``'
-                                          for i, song in enumerate(song_queue_slice, start=index_offset + 1))
-                embed_message = discord.Embed(description=numbered_list)
+                numbered_list = [f'**{i})** [{song.title}]({song.watch_url}) ``{utils.time_format(song.length)}``'
+                                 for i, song in enumerate(song_queue_slice, start=index_offset + 1)]
+                now_playing = self.song_queues[guild_id][cur_index]
+                numbered_list.insert(0, f'**Now Playing:** [{now_playing.title}]({now_playing.watch_url}) '
+                                        f'``{utils.time_format(now_playing.length)}``\n')
+                current_page = index_offset // 10 + 1
+                pages = (len(self.song_queues[guild_id]) - 1) // 10 + 1
+                numbered_list.append(f'Page {current_page}/{pages}')
+                desc = '\n'.join(numbered_list)
+                embed_message = discord.Embed(description=desc)
                 await channel.send(embed=embed_message)
 
         @self.command()
