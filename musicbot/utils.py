@@ -1,5 +1,5 @@
 import re
-import requests
+import httpx
 import time
 
 YOUTUBE_PLAYLIST_REGEX = re.compile(r'(?:http?s?://)?(?:www\.|m\.)?(?:music.)?youtu\.?be(?:\.com)?'
@@ -13,7 +13,7 @@ YOUTUBE_WATCH_REGEX = re.compile(r'(?:http?s?://)?(?:www\.|m\.)?(?:music.)?youtu
 
 def keyword_search(keyword: str) -> str:
     search_query = {'search_query': keyword}
-    html = requests.get('https://www.youtube.com/results', params=search_query).text
+    html = httpx.get('https://www.youtube.com/results', params=search_query).text
     song_id = re.search(r'/(?:watch\?v=|shorts/)([\w-]{11})', html).group(1)
 
     return song_id
