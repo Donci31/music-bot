@@ -6,6 +6,7 @@ from discord.ext import commands
 from discord.ext.commands import Context
 from collections import defaultdict
 from tempfile import TemporaryDirectory
+from typing import Optional
 from pytube import YouTube, Playlist
 
 from musicbot import utils
@@ -20,6 +21,7 @@ class MusicBot(commands.Bot):
         self.song_indexes = defaultdict[int, int](int)
         self.song_directory = TemporaryDirectory[str]()
         self.loop_queue = False
+        self.cur_song: Optional[YouTube] = None
 
         @self.command()
         async def play(ctx: Context, *, keyword: str) -> None:
@@ -56,20 +58,27 @@ class MusicBot(commands.Bot):
         async def queue(ctx: Context) -> None:
             guild_id = ctx.guild.id
             channel = ctx.channel
+
+            queue_list = []
             cur_index = self.song_indexes[guild_id] - 1
             index_offset = cur_index // 10 * 10
+            now_playing = self.cur_song
+
+            if now_playing is not None:
+                queue_list.append(f'**Now Playing:** [{now_playing.title}]({now_playing.watch_url}) '
+                                  f'``{utils.time_format(now_playing.length)}``\n')
 
             if song_queue_slice := self.song_queues[guild_id][index_offset:index_offset + 10]:
-                numbered_list = [f'**{i})** [{song.title}]({song.watch_url}) '
-                                 f'``{utils.time_format(song.length)}``'
-                                 for i, song in enumerate(song_queue_slice, start=index_offset + 1)]
-                now_playing = self.song_queues[guild_id][cur_index]
-                numbered_list.insert(0, f'**Now Playing:** [{now_playing.title}]({now_playing.watch_url}) '
-                                        f'``{utils.time_format(now_playing.length)}``\n')
+                queue_list.extend(f'**{i})** [{song.title}]({song.watch_url}) '
+                                  f'``{utils.time_format(song.length)}``'
+                                  for i, song in enumerate(song_queue_slice, start=index_offset + 1))
+
                 current_page = index_offset // 10 + 1
                 pages = (len(self.song_queues[guild_id]) - 1) // 10 + 1
-                numbered_list.append(f'Page {current_page}/{pages}')
-                desc = '\n'.join(numbered_list)
+                queue_list.append(f'Page {current_page}/{pages}')
+
+            if queue_list:
+                desc = '\n'.join(queue_list)
                 embed_message = discord.Embed(description=desc)
                 await channel.send(embed=embed_message)
 
@@ -234,12 +243,15 @@ class MusicBot(commands.Bot):
     def _start_playing(self, guild_id: int, voice: VoiceClient) -> None:
         if (cur_index := self.song_indexes[guild_id]) < len(cur_queue := self.song_queues[guild_id]):
             self.song_indexes[guild_id] += 1
-            song_path = self._download_song(cur_queue[cur_index])
+            self.cur_song = cur_queue[cur_index]
+            song_path = self._download_song(self.cur_song)
 
             voice.play(discord.FFmpegPCMAudio(song_path), after=lambda e: self._start_playing(guild_id, voice))
         elif self.loop_queue:
             self.song_indexes[guild_id] = 0
             self._start_playing(guild_id, voice)
+        else:
+            self.cur_song = None
 
     async def close(self) -> None:
         self.song_directory.cleanup()
