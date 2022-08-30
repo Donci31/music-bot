@@ -15,8 +15,9 @@ from musicbot.utils import YOUTUBE_WATCH_REGEX, YOUTUBE_PLAYLIST_REGEX
 
 class MusicBot(commands.Bot):
     def __init__(self) -> None:
-        intents = discord.Intents(guilds=True, guild_messages=True, message_content=True, voice_states=True)
-        super().__init__(command_prefix='-', intents=intents)
+        bot_intents = discord.Intents(guilds=True, guild_messages=True, message_content=True, voice_states=True)
+        super().__init__(command_prefix='-', intents=bot_intents)
+
         self.song_queues = defaultdict[int, list[YouTube]](list)
         self.song_indexes = defaultdict[int, int](int)
         self.song_directory = TemporaryDirectory[str]()
@@ -60,8 +61,7 @@ class MusicBot(commands.Bot):
             channel = ctx.channel
 
             queue_list = []
-            cur_index = self.song_indexes[guild_id] - 1
-            index_offset = cur_index // 10 * 10
+            index_offset = (self.song_indexes[guild_id] - 1) // 10 * 10
             now_playing = self.cur_song
 
             if now_playing is not None:
