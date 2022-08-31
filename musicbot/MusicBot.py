@@ -60,7 +60,7 @@ class MusicBot(commands.Bot):
             channel = ctx.channel
 
             queue_list = []
-            index_offset = (self.song_indexes[guild_id] - 1) // 10 * 10
+            index_offset = (max(self.song_indexes[guild_id] - 1, 0)) // 10 * 10
             now_playing = self.cur_song
 
             if now_playing is not None:
