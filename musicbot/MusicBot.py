@@ -39,15 +39,14 @@ class MusicBot(commands.Bot):
             guild_id = ctx.guild.id
 
             if youtube_playlist_match := YOUTUBE_PLAYLIST_REGEX.fullmatch(keyword):
-                playlist_id = youtube_playlist_match.group(1)
+                playlist_id = youtube_playlist_match.group('playlist_id')
 
                 playlist = Playlist(f'https://www.youtube.com/playlist?list={playlist_id}')
                 await self._add_playlist(ctx, playlist)
             else:
-                if youtube_link_match := YOUTUBE_WATCH_REGEX.fullmatch(keyword):
-                    song_id = youtube_link_match.group(1)
-                else:
-                    song_id = utils.keyword_search(keyword)
+                if not (youtube_link_match := YOUTUBE_WATCH_REGEX.fullmatch(keyword)):
+                    youtube_link_match = utils.keyword_search(keyword)
+                song_id = youtube_link_match.group('youtube_id')
 
                 song = YouTube(f'https://www.youtube.com/watch?v={song_id}')
                 await self._add_song(ctx, song)
