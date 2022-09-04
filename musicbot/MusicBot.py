@@ -20,9 +20,9 @@ class MusicBot(commands.Bot):
 
         self.song_queues = defaultdict[int, list[YouTube]](list)
         self.song_indexes = defaultdict[int, int](int)
+        self.cur_songs = defaultdict[int, Optional[YouTube]](lambda: None)
         self.song_directory = TemporaryDirectory[str]()
         self.loop_queue = False
-        self.cur_song: Optional[YouTube] = None
 
         @self.command()
         async def play(ctx: Context, *, keyword: str) -> None:
@@ -61,7 +61,7 @@ class MusicBot(commands.Bot):
 
             queue_list = []
             index_offset = (max(self.song_indexes[guild_id] - 1, 0)) // 10 * 10
-            now_playing = self.cur_song
+            now_playing = self.cur_songs[guild_id]
 
             if now_playing is not None:
                 queue_list.append(f'**Now Playing:** [{now_playing.title}]({now_playing.watch_url}) '
@@ -242,15 +242,15 @@ class MusicBot(commands.Bot):
     def _start_playing(self, guild_id: int, voice: VoiceClient) -> None:
         if (cur_index := self.song_indexes[guild_id]) < len(cur_queue := self.song_queues[guild_id]):
             self.song_indexes[guild_id] += 1
-            self.cur_song = cur_queue[cur_index]
-            song_path = self._download_song(self.cur_song)
+            self.cur_songs[guild_id] = cur_queue[cur_index]
+            song_path = self._download_song(self.cur_songs[guild_id])
 
             voice.play(discord.FFmpegPCMAudio(song_path), after=lambda e: self._start_playing(guild_id, voice))
         elif self.loop_queue:
             self.song_indexes[guild_id] = 0
             self._start_playing(guild_id, voice)
         else:
-            self.cur_song = None
+            self.cur_songs[guild_id] = None
 
     async def close(self) -> None:
         self.song_directory.cleanup()
