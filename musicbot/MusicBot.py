@@ -14,9 +14,9 @@ from musicbot.utils import YOUTUBE_WATCH_REGEX, YOUTUBE_PLAYLIST_REGEX
 
 
 class MusicBot(commands.Bot):
-    def __init__(self) -> None:
+    def __init__(self, prefix: str) -> None:
         bot_intents = discord.Intents(guilds=True, guild_messages=True, message_content=True, voice_states=True)
-        super().__init__(command_prefix='-', intents=bot_intents)
+        super().__init__(command_prefix=prefix, intents=bot_intents)
 
         self.song_queues = defaultdict[int, list[YouTube]](list)
         self.song_indexes = defaultdict[int, int](int)

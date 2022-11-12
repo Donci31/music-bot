@@ -6,8 +6,10 @@ from musicbot import MusicBot
 
 def main() -> None:
     load_dotenv()
+    prefix = environ['BOT_PREFIX']
     token = environ['BOT_TOKEN']
-    bot = MusicBot()
+
+    bot = MusicBot(prefix)
     bot.run(token)
 
 
