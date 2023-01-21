@@ -4,5 +4,3 @@
 * Make a python virtual enviroment and activate it
 * Pip install all the packages found in the requirements.txt
 * Create a .env file with same context as .env.example and instert token there
-## Creator:
-Donát Szigeti
