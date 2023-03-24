@@ -1,8 +1,11 @@
 # Pycharm files
 .idea
 
-# Enviromental file
+# Environmental file
 .env
+
+# Virtual environment
+venv
 
 # Pycache
 __pycache__/
