@@ -26,7 +26,3 @@ def time_format(secs: int) -> str:
         return time.strftime('%M:%S', time.gmtime(secs))
     else:
         return time.strftime('%H:%M:%S', time.gmtime(secs))
-
-
-def index_check(index: str, array_size: int) -> bool:
-    return index.isnumeric() and int(index) in range(1, array_size + 1)

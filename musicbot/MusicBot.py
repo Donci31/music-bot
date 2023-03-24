@@ -107,7 +107,7 @@ class MusicBot(commands.Bot):
             voice = ctx.voice_client
             channel = ctx.channel
 
-            if utils.index_check(jump_number, len(self.song_queues[guild_id])):
+            try:
                 index = int(jump_number) - 1
                 song = self.song_queues[guild_id][index]
 
@@ -116,6 +116,14 @@ class MusicBot(commands.Bot):
                     voice.stop()
 
                 desc = f'Jumped to [{song.title}]({song.watch_url})'
+                embed_message = discord.Embed(description=desc)
+                await channel.send(embed=embed_message)
+            except ValueError:
+                desc = '**Provide the songs index!**'
+                embed_message = discord.Embed(description=desc)
+                await channel.send(embed=embed_message)
+            except IndexError:
+                desc = '**Index out of bounds!**'
                 embed_message = discord.Embed(description=desc)
                 await channel.send(embed=embed_message)
 
@@ -164,13 +172,21 @@ class MusicBot(commands.Bot):
             guild_id = ctx.guild.id
             channel = ctx.channel
 
-            if utils.index_check(remove_number, len(self.song_queues[guild_id])):
+            try:
                 index = int(remove_number) - 1
                 song = self.song_queues[guild_id][index]
 
                 self.song_queues[guild_id].pop(index)
 
                 desc = f'Removed [{song.title}]({song.watch_url})'
+                embed_message = discord.Embed(description=desc)
+                await channel.send(embed=embed_message)
+            except ValueError:
+                desc = '**Provide the songs index!**'
+                embed_message = discord.Embed(description=desc)
+                await channel.send(embed=embed_message)
+            except IndexError:
+                desc = '**Index out of bounds!**'
                 embed_message = discord.Embed(description=desc)
                 await channel.send(embed=embed_message)
 
@@ -201,9 +217,8 @@ class MusicBot(commands.Bot):
             guild_id = ctx.guild.id
             channel = ctx.channel
             song_queue = self.song_queues[guild_id]
-            queue_length = len(song_queue)
 
-            if utils.index_check(first_number, queue_length) and utils.index_check(second_number, queue_length):
+            try:
                 first_index = int(first_number) - 1
                 second_index = int(second_number) - 1
                 song = song_queue[first_index]
@@ -211,6 +226,14 @@ class MusicBot(commands.Bot):
                 song_queue.insert(second_index, song_queue.pop(first_index))
 
                 desc = f'Moved [{song.title}]({song.watch_url}) to position **{second_index + 1}**'
+                embed_message = discord.Embed(description=desc)
+                await channel.send(embed=embed_message)
+            except ValueError:
+                desc = '**Provide the songs index!**'
+                embed_message = discord.Embed(description=desc)
+                await channel.send(embed=embed_message)
+            except IndexError:
+                desc = '**Index out of bounds!**'
                 embed_message = discord.Embed(description=desc)
                 await channel.send(embed=embed_message)
 
