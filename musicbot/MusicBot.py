@@ -275,6 +275,5 @@ class MusicBot(commands.Bot):
         else:
             self.cur_songs[guild_id] = None
 
-    async def close(self) -> None:
+    def __del__(self):
         self.song_directory.cleanup()
-        await super().close()
