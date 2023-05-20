@@ -10,5 +10,5 @@ RUN pip install -r requirements.txt
 COPY musicbot/ musicbot/
 COPY main.py .
 
-CMD ["python3", "main.py"]
+ENTRYPOINT ["python3", "main.py"]
 
