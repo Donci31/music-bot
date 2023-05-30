@@ -1,6 +1,7 @@
 import discord
 import random
 import os
+import time
 from discord import VoiceClient
 from discord.ext import commands
 from discord.ext.commands import Context
@@ -19,7 +20,7 @@ class MusicBot(commands.Bot):
 
         self.song_queues = defaultdict[int, list[YouTube]](list)
         self.song_indexes = defaultdict[int, int](int)
-        self.cur_songs = defaultdict[int, YouTube | None](lambda: None)
+        self.cur_songs = defaultdict[int, tuple[YouTube, int] | None](lambda: None)
         self.loop_queue = defaultdict[int, bool](bool)
 
         self.song_directory = TemporaryDirectory[str]()
@@ -61,7 +62,7 @@ class MusicBot(commands.Bot):
 
             queue_list = []
             index_offset = max(self.song_indexes[guild_id] - 1, 0) // 10 * 10
-            now_playing = self.cur_songs[guild_id]
+            now_playing = self.cur_songs[guild_id][0]
 
             if now_playing is not None:
                 queue_list.append(f'**Now Playing:** [{now_playing.title}]({now_playing.watch_url}) '
@@ -239,6 +240,27 @@ class MusicBot(commands.Bot):
                 embed_message = discord.Embed(description=desc)
                 await channel.send(embed=embed_message)
 
+        @self.command()
+        async def prog(ctx: Context) -> None:
+            guild_id = ctx.guild.id
+            channel = ctx.channel
+
+            if self.cur_songs[guild_id] is None:
+                desc = '**There is no current song playing!**'
+                embed_message = discord.Embed(description=desc)
+                await channel.send(embed=embed_message)
+                return
+
+            song = self.cur_songs[guild_id][0]
+            current_progress = round(time.time()) - self.cur_songs[guild_id][1]
+
+            desc = (
+                f'[{song.title}]({song.watch_url})\n\n'
+                f'**Progress:** ``[{utils.time_format(current_progress)} / {utils.time_format(song.length)}]``'
+            )
+            embed_message = discord.Embed(description=desc)
+            await channel.send(embed=embed_message)
+
     async def _add_playlist(self, ctx: Context, playlist: Playlist) -> None:
         guild_id = ctx.guild.id
         channel = ctx.channel
@@ -266,9 +288,9 @@ class MusicBot(commands.Bot):
 
     def _start_playing(self, guild_id: int, voice: VoiceClient) -> None:
         if (cur_index := self.song_indexes[guild_id]) < len(cur_queue := self.song_queues[guild_id]):
+            song_path = self._download_song(cur_queue[cur_index])
             self.song_indexes[guild_id] += 1
-            self.cur_songs[guild_id] = cur_queue[cur_index]
-            song_path = self._download_song(self.cur_songs[guild_id])
+            self.cur_songs[guild_id] = (cur_queue[cur_index], round(time.time()))
 
             voice.play(discord.FFmpegPCMAudio(song_path), after=lambda e: self._start_playing(guild_id, voice))
         elif self.loop_queue[guild_id]:
