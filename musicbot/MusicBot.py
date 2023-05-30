@@ -6,7 +6,6 @@ from discord.ext import commands
 from discord.ext.commands import Context
 from collections import defaultdict
 from tempfile import TemporaryDirectory
-from typing import Optional
 from pytube import YouTube, Playlist
 
 from musicbot import utils
@@ -20,9 +19,10 @@ class MusicBot(commands.Bot):
 
         self.song_queues = defaultdict[int, list[YouTube]](list)
         self.song_indexes = defaultdict[int, int](int)
-        self.cur_songs = defaultdict[int, Optional[YouTube]](lambda: None)
+        self.cur_songs = defaultdict[int, YouTube | None](lambda: None)
+        self.loop_queue = defaultdict[int, bool](bool)
+
         self.song_directory = TemporaryDirectory[str]()
-        self.loop_queue = False
 
         @self.command()
         async def play(ctx: Context, *, keyword: str) -> None:
@@ -35,8 +35,8 @@ class MusicBot(commands.Bot):
                 voice_channel = ctx.author.voice.channel
                 await voice_channel.connect()
 
-            voice = ctx.voice_client
             guild_id = ctx.guild.id
+            voice = ctx.voice_client
 
             if youtube_playlist_match := YOUTUBE_PLAYLIST_REGEX.fullmatch(keyword):
                 playlist_id = youtube_playlist_match.group('playlist_id')
@@ -104,8 +104,8 @@ class MusicBot(commands.Bot):
         @self.command()
         async def jump(ctx: Context, *, jump_number: str) -> None:
             guild_id = ctx.guild.id
-            voice = ctx.voice_client
             channel = ctx.channel
+            voice = ctx.voice_client
 
             try:
                 index = int(jump_number) - 1
@@ -129,9 +129,10 @@ class MusicBot(commands.Bot):
 
         @self.command()
         async def loop(ctx: Context) -> None:
+            guild_id = ctx.guild.id
             channel = ctx.channel
 
-            self.loop_queue = True
+            self.loop_queue[guild_id] = True
 
             desc = 'Now looping the **queue**'
             embed_message = discord.Embed(description=desc)
@@ -139,9 +140,10 @@ class MusicBot(commands.Bot):
 
         @self.command()
         async def unloop(ctx: Context) -> None:
+            guild_id = ctx.guild.id
             channel = ctx.channel
 
-            self.loop_queue = False
+            self.loop_queue[guild_id] = False
 
             desc = 'Looping is now **disabled**'
             embed_message = discord.Embed(description=desc)
@@ -238,8 +240,8 @@ class MusicBot(commands.Bot):
                 await channel.send(embed=embed_message)
 
     async def _add_playlist(self, ctx: Context, playlist: Playlist) -> None:
-        channel = ctx.channel
         guild_id = ctx.guild.id
+        channel = ctx.channel
 
         self.song_queues[guild_id].extend(playlist.videos)
 
@@ -248,8 +250,8 @@ class MusicBot(commands.Bot):
         await channel.send(embed=embed_message)
 
     async def _add_song(self, ctx: Context, song: YouTube) -> None:
-        channel = ctx.channel
         guild_id = ctx.guild.id
+        channel = ctx.channel
 
         self.song_queues[guild_id].append(song)
 
@@ -269,7 +271,7 @@ class MusicBot(commands.Bot):
             song_path = self._download_song(self.cur_songs[guild_id])
 
             voice.play(discord.FFmpegPCMAudio(song_path), after=lambda e: self._start_playing(guild_id, voice))
-        elif self.loop_queue:
+        elif self.loop_queue[guild_id]:
             self.song_indexes[guild_id] = 0
             self._start_playing(guild_id, voice)
         else:
