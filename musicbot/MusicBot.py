@@ -48,7 +48,7 @@ class MusicBot(commands.Bot):
                     youtube_link_match = utils.keyword_search(keyword)
                 song_id = youtube_link_match.group('youtube_id')
 
-                song = YouTube(f'https://www.youtube.com/watch?v={song_id}')
+                song = YouTube.from_id(song_id)
                 await self._add_song(ctx, song)
 
             if not voice.is_playing():
@@ -240,7 +240,7 @@ class MusicBot(commands.Bot):
                 await channel.send(embed=embed_message)
 
         @self.command()
-        async def prog(ctx: Context) -> None:
+        async def info(ctx: Context) -> None:
             guild_id = ctx.guild.id
             channel = ctx.channel
 
