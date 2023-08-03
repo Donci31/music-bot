@@ -11,9 +11,9 @@ The Discord Music Bot is a bot designed to play music in Discord voice channels.
 
 ## Installation
 1. You need to have [FFmpeg](https://ffmpeg.org/download.html) installed and its bin folder added to your path.
-2. Clone the repository: `git clone https://github.com/Donci31/music-bot`
-3. Install the required dependencies: `pip install -r requirements.txt`
+2. Clone the repository: `git clone https://github.com/Donci31/music-bot`.
+3. Install the required dependencies: `pip install -r requirements.txt`.
 4. Obtain a bot token by creating a bot account on the [Discord Developer Portal](https://discord.com/developers/applications).
 5. Create a .env file with same context as .env.example and instert token there.
 6. Invite the bot to your Discord server using the invite link generated in the [Discord Developer Portal](https://discord.com/developers/applications).
-7. Run the main script: `python main.py`
+7. Run the main script: `python main.py`.
