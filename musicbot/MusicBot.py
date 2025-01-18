@@ -6,7 +6,7 @@ from discord.ext import commands
 from discord.ext.commands import Context
 from collections import defaultdict
 from tempfile import TemporaryDirectory
-from pytube import YouTube, Playlist
+from pytubefix import YouTube, Playlist
 
 from musicbot import utils
 from musicbot.utils import YOUTUBE_WATCH_REGEX, YOUTUBE_PLAYLIST_REGEX
@@ -48,7 +48,7 @@ class MusicBot(commands.Bot):
                     youtube_link_match = utils.keyword_search(keyword)
                 song_id = youtube_link_match.group('youtube_id')
 
-                song = YouTube.from_id(song_id)
+                song = YouTube(f'https://www.youtube.com/watch?v={song_id}', use_po_token=True)
                 await self._add_song(ctx, song)
 
             if not voice.is_playing():

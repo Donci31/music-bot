@@ -17,7 +17,7 @@ multidict
 pycparser
 PyNaCl
 python-dotenv
-pytube
+pytubefix
 requests
 rfc3986
 sniffio
