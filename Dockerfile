@@ -1,4 +1,4 @@
-FROM python
+FROM nikolaik/python-nodejs
 
 RUN apt-get -y update && apt-get install -y ffmpeg	
 
