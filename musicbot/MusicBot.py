@@ -6,7 +6,7 @@ from discord.ext import commands
 from discord.ext.commands import Context
 from collections import defaultdict
 from tempfile import TemporaryDirectory
-from pytubefix import YouTube, Playlist
+from pytubefix import YouTube, Playlist, Search
 
 from musicbot import utils
 from musicbot.utils import YOUTUBE_WATCH_REGEX, YOUTUBE_PLAYLIST_REGEX
@@ -45,10 +45,11 @@ class MusicBot(commands.Bot):
                 await self._add_playlist(ctx, playlist)
             else:
                 if not (youtube_link_match := YOUTUBE_WATCH_REGEX.fullmatch(keyword)):
-                    youtube_link_match = utils.keyword_search(keyword)
-                song_id = youtube_link_match.group('youtube_id')
+                    song = Search(keyword).videos[0]
+                else:
+                    song_id = youtube_link_match.group('youtube_id')
+                    song = YouTube(f'https://www.youtube.com/watch?v={song_id}')
 
-                song = YouTube(f'https://www.youtube.com/watch?v={song_id}')
                 await self._add_song(ctx, song)
 
             if not voice.is_playing():
@@ -284,7 +285,7 @@ class MusicBot(commands.Bot):
         await channel.send(embed=embed_message)
 
     def _download_song(self, video: YouTube) -> str:
-        song = video.streams.filter(only_audio=True).first()
+        song = video.streams.get_audio_only()
         return song.download(output_path=self.song_directory.name, filename=f'{video.video_id}.mp4')
 
     def _start_playing(self, guild_id: int, voice: VoiceClient) -> None:
