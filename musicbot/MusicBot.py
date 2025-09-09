@@ -1,6 +1,5 @@
 import time
 from collections import defaultdict
-from tempfile import TemporaryDirectory
 
 import discord
 from discord import VoiceClient
@@ -27,8 +26,6 @@ class MusicBot(commands.Bot):
         self.cur_songs = defaultdict[int, tuple[YouTube, int] | None](lambda: None)
         self.loop_queue = defaultdict[int, bool](bool)
 
-        self.song_directory = TemporaryDirectory[str]()
-
     async def setup_hook(self):
         await self.add_cog(MusicCommands(self))
         await self.tree.sync()
@@ -37,7 +34,6 @@ class MusicBot(commands.Bot):
         guild_id = ctx.guild.id
 
         self.song_queues[guild_id].extend(playlist.videos)
-
         total_length = sum(video.length for video in playlist.videos)
 
         embed = (
@@ -74,24 +70,33 @@ class MusicBot(commands.Bot):
 
         await ctx.reply(embed=embed)
 
-    def _download_song(self, video: YouTube) -> str:
-        stream = video.streams.get_audio_only()
-        return stream.download(
-            output_path=self.song_directory.name,
-            filename=f'{video.video_id}.mp4',
-        )
-
     def start_playing(self, guild_id: int, voice: VoiceClient) -> None:
         cur_index = self.song_indexes[guild_id]
         cur_queue = self.song_queues[guild_id]
 
         if cur_index < len(cur_queue):
-            song_path = self._download_song(cur_queue[cur_index])
+            stream_url = cur_queue[cur_index].streams.get_audio_only(subtype='webm').url
             self.song_indexes[guild_id] += 1
             self.cur_songs[guild_id] = (cur_queue[cur_index], round(time.time()))
 
+            ffmpeg_options = {
+                'codec': 'copy',
+                 'before_options': (
+                    '-reconnect 1 '
+                    '-reconnect_streamed 1 '
+                    '-reconnect_delay_max 5 '
+                    '-nostdin'
+                ),
+                'options': (
+                    '-vn '
+                    '-sn '
+                    '-dn '
+                    '-bufsize 64k '
+                ),
+            }
+
             voice.play(
-                discord.FFmpegPCMAudio(song_path),
+                discord.FFmpegOpusAudio(stream_url, **ffmpeg_options),
                 after=lambda e: self.start_playing(guild_id, voice),
             )
         elif self.loop_queue[guild_id]:
@@ -99,6 +104,3 @@ class MusicBot(commands.Bot):
             self.start_playing(guild_id, voice)
         else:
             self.cur_songs[guild_id] = None
-
-    def __del__(self):
-        self.song_directory.cleanup()
