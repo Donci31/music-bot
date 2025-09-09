@@ -81,18 +81,22 @@ class MusicBot(commands.Bot):
 
             ffmpeg_options = {
                 'codec': 'copy',
-                 'before_options': (
-                    '-reconnect 1 '
-                    '-reconnect_streamed 1 '
-                    '-reconnect_delay_max 5 '
-                    '-nostdin'
+                'before_options': ' '.join(
+                    (
+                        '-reconnect 1',
+                        '-reconnect_streamed 1',
+                        '-reconnect_delay_max 5',
+                        '-nostdin'
+                    )
                 ),
-                'options': (
-                    '-vn '
-                    '-sn '
-                    '-dn '
-                    '-bufsize 64k '
-                ),
+                'options': ' '.join(
+                    (
+                        '-vn',
+                        '-sn',
+                        '-dn',
+                        '-bufsize 64k'
+                    )
+                )
             }
 
             voice.play(

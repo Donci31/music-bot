@@ -6,11 +6,11 @@ from discord.ext.commands import Context
 
 YOUTUBE_PLAYLIST_REGEX = re.compile(r'(?:http?s?://)?(?:www\.|m\.)?(?:music.)?youtu\.?be(?:\.com)?'
                                     r'(?:\w*.?://)?\w*.?\w*-?.?\w*(?:playlist|list|embed|.*/)?\??'
-                                    r'(?:feature=\w*\.?\w*)?&?(?:list=|/)(?P<playlist_id>[\w-]{34})(?:\S+)?')
+                                    r'(?:feature=\w*\.?\w*)?&?(?:list=|/)(?P<playlist_id>[\w-]{34,})\b')
 
 YOUTUBE_WATCH_REGEX = re.compile(r'(?:http?s?://)?(?:www\.|m\.)?(?:music.)?youtu\.?be(?:\.com)?'
                                  r'(?:\w*.?://)?\w*.?\w*-?.?\w*(?:embed|e|v|watch|shorts|.*/)?\??'
-                                 r'(?:feature=\w*\.?\w*)?&?(?:\?v=|/)(?P<youtube_id>[\w-]{11})(?:\S+)?')
+                                 r'(?:feature=\w*\.?\w*)?&?(?:\?v=|/)(?P<youtube_id>[\w-]{11})\b')
 
 CHUNGUS_ICON = 'https://www.pngall.com/wp-content/uploads/15/Big-Chungus-PNG-Picture.png'
 
