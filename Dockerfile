@@ -1,12 +1,12 @@
-FROM nikolaik/python-nodejs
-
-RUN apt-get -y update && apt-get install -y ffmpeg	
+FROM nikolaik/python-nodejs:python3.13-nodejs24-alpine
 
 WORKDIR /app/
 
 COPY pyproject.toml uv.lock .python-version ./
-RUN uv sync
+
+RUN apk add --no-cache ffmpeg && \
+    uv sync --frozen --no-dev --compile-bytecode
 
 COPY ./ ./
 
-ENTRYPOINT ["uv", "run", "main.py"]
+ENTRYPOINT ["uv", "run", "--no-sync", "main.py"]

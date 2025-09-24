@@ -10,3 +10,13 @@ dependencies = [
     "python-dotenv>=1.1.1",
     "pytubefix>=9.5.1",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.13.1",
+]
+
+[tool.ruff.lint]
+select = ["ALL"]
+
+ignore = ["D100", "D101", "D102", "D103", "D104", "D107"]

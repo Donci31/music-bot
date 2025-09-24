@@ -4,14 +4,15 @@ import time
 import discord
 from discord.ext import commands
 from discord.ext.commands import Context
-from pytubefix import YouTube, Playlist, Search
+from pytubefix import Playlist, Search, YouTube
 
-from musicbot import utils, MusicBot
-from musicbot.utils import YOUTUBE_WATCH_REGEX, YOUTUBE_PLAYLIST_REGEX, make_embed
+import musicbot
+from musicbot import utils
+from musicbot.utils import YOUTUBE_PLAYLIST_REGEX, YOUTUBE_WATCH_REGEX, make_embed
 
 
 class MusicCommands(commands.Cog):
-    def __init__(self, bot: MusicBot):
+    def __init__(self, bot: musicbot.MusicBot) -> None:
         self.bot = bot
 
     @commands.hybrid_command(description="Play a song or playlist from YouTube")
@@ -30,21 +31,23 @@ class MusicCommands(commands.Cog):
         await ctx.defer()
 
         if match := YOUTUBE_PLAYLIST_REGEX.fullmatch(song):
-            playlist_id = match.group('playlist_id')
-            playlist = Playlist(f'https://www.youtube.com/playlist?list={playlist_id}')
+            playlist_id = match.group("playlist_id")
+            playlist = Playlist(f"https://www.youtube.com/playlist?list={playlist_id}")
             await self.bot.add_playlist(ctx, playlist)
         else:
             if not (link_match := YOUTUBE_WATCH_REGEX.fullmatch(song)):
                 youtube_song = Search(song).videos[0]
             else:
-                song_id = link_match.group('youtube_id')
-                youtube_song = YouTube(f'https://www.youtube.com/watch?v={song_id}')
+                song_id = link_match.group("youtube_id")
+                youtube_song = YouTube(f"https://www.youtube.com/watch?v={song_id}")
             await self.bot.add_song(ctx, youtube_song)
 
         if not voice.is_playing():
             self.bot.start_playing(guild_id, voice)
 
-    @commands.hybrid_command(description="Show the current music queue with page selector")
+    @commands.hybrid_command(
+        description="Show the current music queue with page selector",
+    )
     @discord.app_commands.describe(page="The page number to view")
     async def queue(self, ctx: Context, page: int = 1) -> None:
         await ctx.defer()
@@ -61,24 +64,33 @@ class MusicCommands(commands.Cog):
         total_pages = max((len(queue) - 1) // per_page + 1, 1)
         page = max(1, min(page, total_pages))
         start_index = (page - 1) * per_page
-        queue_slice = queue[start_index:start_index + per_page]
+        queue_slice = queue[start_index : start_index + per_page]
 
         embed = make_embed(ctx, "🎶 Chungus Queue")
 
         if now_playing:
+            now_playing_text = (
+                f"▶️ [{now_playing.title}]({now_playing.watch_url}) "
+                f"`{utils.time_format(now_playing.length)}`"
+            )
             embed.add_field(
                 name="Now Playing",
-                value=f"▶️ [{now_playing.title}]({now_playing.watch_url}) "
-                      f"`{utils.time_format(now_playing.length)}`",
-                inline=False
+                value=now_playing_text,
+                inline=False,
             ).set_thumbnail(url=now_playing.thumbnail_url)
 
         if queue_slice:
             queue_text = ""
             for i, song in enumerate(queue_slice, start=start_index + 1):
-                queue_text += f"**{i})** [{song.title}]({song.watch_url}) " \
-                              f"`{utils.time_format(song.length)}`\n"
-            embed.add_field(name=f"Queue Page {page}/{total_pages}", value=queue_text, inline=False)
+                queue_text += (
+                    f"**{i})** [{song.title}]({song.watch_url}) "
+                    f"`{utils.time_format(song.length)}`\n"
+                )
+            embed.add_field(
+                name=f"Queue Page {page}/{total_pages}",
+                value=queue_text,
+                inline=False,
+            )
 
         await ctx.reply(embed=embed)
 
@@ -107,7 +119,7 @@ class MusicCommands(commands.Cog):
             if ctx.voice_client:
                 ctx.voice_client.stop()
 
-            desc = f'Jumped to [{song.title}]({song.watch_url})'
+            desc = f"Jumped to [{song.title}]({song.watch_url})"
             await ctx.reply(embed=make_embed(ctx, desc))
         except ValueError:
             await ctx.reply(embed=make_embed(ctx, "**Provide the song index!**"))
@@ -146,7 +158,7 @@ class MusicCommands(commands.Cog):
             index = int(song_number) - 1
             song = self.bot.song_queues[guild_id][index]
             self.bot.song_queues[guild_id].pop(index)
-            desc = f'Removed [{song.title}]({song.watch_url})'
+            desc = f"Removed [{song.title}]({song.watch_url})"
             await ctx.reply(embed=make_embed(ctx, desc))
         except ValueError:
             await ctx.reply(embed=make_embed(ctx, "**Provide the song index!**"))
@@ -171,7 +183,13 @@ class MusicCommands(commands.Cog):
     @commands.hybrid_command(description="Move a song to another position in the queue")
     @discord.app_commands.describe(first_number="The current position of the song")
     @discord.app_commands.describe(second_number="The new position in the queue")
-    async def move(self, ctx: Context, first_number: str, *, second_number: str) -> None:
+    async def move(
+        self,
+        ctx: Context,
+        first_number: str,
+        *,
+        second_number: str,
+    ) -> None:
         guild_id = ctx.guild.id
         song_queue = self.bot.song_queues[guild_id]
         try:
@@ -179,7 +197,10 @@ class MusicCommands(commands.Cog):
             second_index = int(second_number) - 1
             song = song_queue[first_index]
             song_queue.insert(second_index, song_queue.pop(first_index))
-            desc = f'Moved [{song.title}]({song.watch_url}) to position **{second_index + 1}**'
+            desc = (
+                f"Moved [{song.title}]({song.watch_url}) to "
+                f"position **{second_index + 1}**"
+            )
             await ctx.reply(embed=make_embed(ctx, desc))
         except ValueError:
             await ctx.reply(embed=make_embed(ctx, "**Provide the songs index!**"))
@@ -201,14 +222,22 @@ class MusicCommands(commands.Cog):
 
         bar_length = 20
         filled_length = int(progress / total_length * bar_length) if total_length else 0
-        bar = '█' * filled_length + '─' * (bar_length - filled_length)
+        bar = "█" * filled_length + "─" * (bar_length - filled_length)
 
-        loop_status = "🔁 Queue Looping" if self.bot.loop_queue.get(guild_id, False) else "No Loop"
+        loop_status = (
+            "🔁 Queue Looping"
+            if self.bot.loop_queue.get(guild_id, False)
+            else "No Loop"
+        )
 
         try:
             queue_pos = self.bot.song_queues[guild_id].index(song) + 1
         except ValueError:
             queue_pos = 1
+
+        duration_string = (
+            f"{utils.time_format(progress)} / {utils.time_format(total_length)}"
+        )
 
         embed = (
             discord.Embed(
@@ -218,10 +247,10 @@ class MusicCommands(commands.Cog):
                 description=(
                     f"**Uploader:** {song.author}\n"
                     f"**Queue Position:** {queue_pos}\n"
-                    f"**Duration:** `{utils.time_format(progress)} / {utils.time_format(total_length)}`\n"
+                    f"**Duration:** `{duration_string}`\n"
                     f"**Progress:** `{bar}`\n"
                     f"**Loop Status:** {loop_status}"
-                )
+                ),
             )
             .set_thumbnail(url=song.thumbnail_url)
             .set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar)
