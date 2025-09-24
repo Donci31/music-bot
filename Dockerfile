@@ -4,11 +4,9 @@ RUN apt-get -y update && apt-get install -y ffmpeg
 
 WORKDIR /app/
 
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+COPY pyproject.toml uv.lock .python-version ./
+RUN uv sync
 
-COPY musicbot/ musicbot/
-COPY main.py .
+COPY ./ ./
 
-ENTRYPOINT ["python3", "main.py"]
-
+ENTRYPOINT ["uv", "run", "main.py"]

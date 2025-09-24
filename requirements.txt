@@ -1,4 +1,0 @@
-discord.py
-pytubefix
-PyNaCl
-python-dotenv
