@@ -30,17 +30,22 @@ class MusicCommands(commands.Cog):
 
         await ctx.defer()
 
-        if match := YOUTUBE_PLAYLIST_REGEX.fullmatch(song):
-            playlist_id = match.group("playlist_id")
-            playlist = Playlist(f"https://www.youtube.com/playlist?list={playlist_id}")
-            await self.bot.add_playlist(ctx, playlist)
-        else:
-            if not (link_match := YOUTUBE_WATCH_REGEX.fullmatch(song)):
-                youtube_song = Search(song).videos[0]
-            else:
-                song_id = link_match.group("youtube_id")
+        match song:
+            case s if playlist_match := YOUTUBE_PLAYLIST_REGEX.fullmatch(s):
+                playlist_id = playlist_match.group("playlist_id")
+                playlist = Playlist(
+                    f"https://www.youtube.com/playlist?list={playlist_id}",
+                )
+                await self.bot.add_playlist(ctx, playlist)
+
+            case s if youtube_match := YOUTUBE_WATCH_REGEX.fullmatch(s):
+                song_id = youtube_match.group("youtube_id")
                 youtube_song = YouTube(f"https://www.youtube.com/watch?v={song_id}")
-            await self.bot.add_song(ctx, youtube_song)
+                await self.bot.add_song(ctx, youtube_song)
+
+            case _:
+                youtube_song = Search(song).videos[0]
+                await self.bot.add_song(ctx, youtube_song)
 
         if not voice.is_playing():
             self.bot.start_playing(guild_id, voice)

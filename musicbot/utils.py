@@ -33,8 +33,7 @@ def make_embed(
 
 
 def time_format(secs: int) -> str:
-    hour_in_seconds = 3600
-
-    if secs < hour_in_seconds:
-        return time.strftime("%M:%S", time.gmtime(secs))
-    return time.strftime("%H:%M:%S", time.gmtime(secs))
+    t = time.gmtime(secs)
+    if t.tm_hour:
+        return time.strftime("%-H:%M:%S", t)
+    return time.strftime("%-M:%S", t)
