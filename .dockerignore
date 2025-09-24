@@ -3,6 +3,8 @@
 .gitignore
 .gitattributes
 
+# Github
+.github
 
 # CI
 .codeclimate.yml
@@ -72,6 +74,7 @@ target/
 
 # Virtual environment
 .env
+.env.example
 .venv/
 venv/
 
@@ -89,5 +92,4 @@ venv/
 .vscode/
 
 # Readme
-
 README.md
