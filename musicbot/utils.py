@@ -24,9 +24,18 @@ CHUNGUS_ICON = (
 def make_embed(
     ctx: Context,
     title: str,
+    description: str | None = None,
+    embed_url: str | None = None,
+    thumbnail_url: str | None = None,
 ) -> discord.Embed:
     return (
-        discord.Embed(title=title, color=discord.Color.blurple())
+        discord.Embed(
+            title=title,
+            url=embed_url,
+            description=description,
+            color=discord.Color.blurple(),
+        )
+        .set_thumbnail(url=thumbnail_url)
         .set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar)
         .set_footer(text="Powered by Chungus", icon_url=CHUNGUS_ICON)
     )
@@ -35,5 +44,32 @@ def make_embed(
 def time_format(secs: int) -> str:
     t = time.gmtime(secs)
     if t.tm_hour:
-        return time.strftime("%-H:%M:%S", t)
-    return time.strftime("%-M:%S", t)
+        return time.strftime("%H:%M:%S", t)
+    return time.strftime("%M:%S", t)
+
+
+def split_to_pages(lines: list[str]) -> list[list[str]]:
+    embed_field_value_length = 1024
+    max_items = 10
+
+    pages = []
+    current_page = []
+    current_sum = 0
+
+    for line in lines:
+        length = len(line)
+
+        if (len(current_page) >= max_items) or (
+            current_sum + length > embed_field_value_length
+        ):
+            pages.append(current_page)
+            current_page = []
+            current_sum = 0
+
+        current_page.append(line)
+        current_sum += length
+
+    if current_page:
+        pages.append(current_page)
+
+    return pages

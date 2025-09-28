@@ -9,6 +9,7 @@ from pytubefix import Playlist, YouTube
 
 import musicbot
 from musicbot import utils
+from musicbot.utils import make_embed
 
 
 class MusicBot(commands.Bot):
@@ -31,46 +32,31 @@ class MusicBot(commands.Bot):
         await self.tree.sync()
 
     async def add_playlist(self, ctx: Context, playlist: Playlist) -> None:
-        guild_id = ctx.guild.id
+        self.song_queues[ctx.guild.id].extend(playlist.videos)
 
-        self.song_queues[guild_id].extend(playlist.videos)
-        total_length = sum(video.length for video in playlist.videos)
-
-        embed = (
-            discord.Embed(
-                title=f"📚 Playlist Queued: {playlist.title}",
-                url=playlist.playlist_url,
-                color=discord.Color.blurple(),
-                description=(
-                    f"**{len(playlist)} songs added**\n"
-                    f"**Total Duration:** `{utils.time_format(total_length)}`"
-                ),
-            )
-            .set_thumbnail(url=playlist.thumbnail_url)
-            .set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar)
-            .set_footer(text="Powered by Chungus", icon_url=utils.CHUNGUS_ICON)
+        await ctx.send(
+            embed=make_embed(
+                ctx,
+                f"📚 Playlist Queued: {playlist.title}",
+                description="**{len(playlist)} songs added**",
+                embed_url=playlist.playlist_url,
+                thumbnail_url=playlist.thumbnail_url,
+            ),
         )
 
-        await ctx.send(embed=embed)
-
     async def add_song(self, ctx: Context, song: YouTube) -> None:
-        guild_id = ctx.guild.id
-        self.song_queues[guild_id].append(song)
+        self.song_queues[ctx.guild.id].append(song)
 
-        embed = (
-            discord.Embed(
-                title=f"🎵 Queued - at position #{len(self.song_queues[guild_id])}",
-                color=discord.Color.blurple(),
+        await ctx.send(
+            embed=make_embed(
+                ctx,
+                f"🎵 Queued - at position #{len(self.song_queues[ctx.guild.id])}",
                 description=f"[{song.title}]({song.watch_url}) by "
                 f"[{song.author}]({song.channel_url}) "
                 f"`{utils.time_format(song.length)}`",
-            )
-            .set_thumbnail(url=song.thumbnail_url)
-            .set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar)
-            .set_footer(text="Powered by Chungus", icon_url=utils.CHUNGUS_ICON)
+                thumbnail_url=song.thumbnail_url,
+            ),
         )
-
-        await ctx.reply(embed=embed)
 
     def start_playing(self, guild_id: int, voice: VoiceClient) -> None:
         cur_index = self.song_indexes[guild_id]

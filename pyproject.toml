@@ -14,9 +14,16 @@ dependencies = [
 [dependency-groups]
 dev = [
     "ruff>=0.13.1",
+    "ty>=0.0.1a21",
 ]
 
 [tool.ruff.lint]
 select = ["ALL"]
 
-ignore = ["D"]
+ignore = ["D", "CPY001", "PLR6301"]
+
+preview = true
+
+[tool.ruff.format]
+
+preview = true
