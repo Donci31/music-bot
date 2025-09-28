@@ -215,13 +215,12 @@ class MusicCommands(commands.Cog):
         try:
             first_index = int(first_number) - 1
             second_index = int(second_number) - 1
-            song = self.bot.song_queues[ctx.guild.id][first_index]
-            self.bot.song_queues[ctx.guild.id].insert(
-                second_index,
-                self.bot.song_queues[ctx.guild.id].pop(first_index),
-            )
-            title = f"Moved song #{first_number} to #{second_number}"
+            song_queue = self.bot.song_queues[ctx.guild.id]
 
+            song = song_queue.pop(first_index)
+            song_queue.insert(second_index, song)
+
+            title = f"Moved song #{first_number} to #{second_number}"
             desc = f"[{song.title}]({song.watch_url})"
             await ctx.send(embed=make_embed(ctx, title, desc))
         except ValueError:

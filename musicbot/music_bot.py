@@ -38,7 +38,7 @@ class MusicBot(commands.Bot):
             embed=make_embed(
                 ctx,
                 f"📚 Playlist Queued: {playlist.title}",
-                description="**{len(playlist)} songs added**",
+                description=f"**{len(playlist)} songs added**",
                 embed_url=playlist.playlist_url,
                 thumbnail_url=playlist.thumbnail_url,
             ),
@@ -62,25 +62,31 @@ class MusicBot(commands.Bot):
         cur_index = self.song_indexes[guild_id]
         cur_queue = self.song_queues[guild_id]
 
+        ffmpeg_options = {
+            "before_options": "-reconnect 1 "
+            "-reconnect_streamed 1 "
+            "-reconnect_delay_max 5 "
+            "-nostdin",
+            "options": "-vn -sn -dn",
+        }
+
         if cur_index < len(cur_queue):
-            stream_url = cur_queue[cur_index].streams.get_audio_only(subtype="webm").url
             self.song_indexes[guild_id] += 1
             self.cur_songs[guild_id] = (cur_queue[cur_index], round(time.time()))
 
-            before_options = (
-                "-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5 -nostdin"
-            )
+            song_streams = cur_queue[cur_index].streams
 
-            after_options = "-vn -sn -dn -bufsize 64k"
-
-            ffmpeg_options = {
-                "codec": "copy",
-                "before_options": before_options,
-                "options": after_options,
-            }
+            if song_audio := song_streams.get_audio_only(subtype="webm"):
+                ffmpeg_options["codec"] = "copy"
+            else:
+                song_audio = song_streams.get_audio_only(subtype="mp4")
 
             voice.play(
-                discord.FFmpegOpusAudio(stream_url, **ffmpeg_options),
+                source=discord.FFmpegOpusAudio(
+                    source=song_audio.url,
+                    bitrate=voice.channel.bitrate // 1000,
+                    **ffmpeg_options,
+                ),
                 after=lambda _: self.start_playing(guild_id, voice),
             )
         elif self.loop_queue[guild_id]:
