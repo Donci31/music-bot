@@ -4,22 +4,15 @@ from typing import cast
 
 import discord
 from discord.ext import commands
-from discord.ext.commands import Context
+from discord.ext.commands import Cog, Context
 from pytubefix import Playlist, Search, YouTube
 
-import musicbot
-from musicbot import utils
-from musicbot.utils import (
-    YOUTUBE_PLAYLIST_REGEX,
-    YOUTUBE_WATCH_REGEX,
-    make_embed,
-    split_to_pages,
-    time_format,
-)
+import musicbot as mb
+import musicbot.utils as mu
 
 
-class MusicCommands(commands.Cog):
-    def __init__(self, bot: musicbot.MusicBot) -> None:
+class MusicCommands(Cog):
+    def __init__(self, bot: mb.MusicBot) -> None:
         self.bot = bot
 
     @commands.hybrid_command(description="Play a song or playlist from YouTube")
@@ -29,7 +22,7 @@ class MusicCommands(commands.Cog):
         voice = cast("discord.VoiceClient", ctx.voice_client)
 
         if ctx.author.voice is None:
-            await ctx.send(embed=make_embed(ctx, "**Join a voice channel!**"))
+            await ctx.send(embed=mu.make_embed(ctx, "**Join a voice channel!**"))
             return
 
         if voice is None or not voice.is_connected():
@@ -38,14 +31,14 @@ class MusicCommands(commands.Cog):
         await ctx.defer()
 
         match song:
-            case s if playlist_match := YOUTUBE_PLAYLIST_REGEX.fullmatch(s):
+            case s if playlist_match := mu.YOUTUBE_PLAYLIST_REGEX.fullmatch(s):
                 playlist_id = playlist_match.group("playlist_id")
                 playlist = Playlist(
                     f"https://www.youtube.com/playlist?list={playlist_id}",
                 )
                 await self.bot.add_playlist(ctx, playlist)
 
-            case s if youtube_match := YOUTUBE_WATCH_REGEX.fullmatch(s):
+            case s if youtube_match := mu.YOUTUBE_WATCH_REGEX.fullmatch(s):
                 song_id = youtube_match.group("youtube_id")
                 youtube_song = YouTube(f"https://www.youtube.com/watch?v={song_id}")
                 await self.bot.add_song(ctx, youtube_song)
@@ -75,15 +68,15 @@ class MusicCommands(commands.Cog):
         )
 
         if not queue and now_playing is None:
-            await ctx.send(embed=make_embed(ctx, "❌ No songs currently playing."))
+            await ctx.send(embed=mu.make_embed(ctx, "❌ No songs currently playing."))
             return
 
-        embed = make_embed(ctx, "🎶 Chungus Queue")
+        embed = mu.make_embed(ctx, "🎶 Chungus Queue")
 
         if now_playing:
             now_playing_text = (
                 f"▶️ [{now_playing.title}]({now_playing.watch_url}) "
-                f"`{utils.time_format(now_playing.length)}`"
+                f"`{mu.time_format(now_playing.length)}`"
             )
             embed.add_field(
                 name="Now Playing",
@@ -96,11 +89,11 @@ class MusicCommands(commands.Cog):
             start_index = -1
 
         lines = [
-            f"**{i})** [{s.title}]({s.watch_url}) `{time_format(s.length)}`\n"
+            f"**{i})** [{s.title}]({s.watch_url}) `{mu.time_format(s.length)}`\n"
             for i, s in enumerate(queue, start=1)
         ]
 
-        pages = split_to_pages(lines)
+        pages = mu.split_to_pages(lines)
 
         if page_number is None:
             cur_page_number, cur_page = next(
@@ -125,74 +118,71 @@ class MusicCommands(commands.Cog):
     async def skip(self, ctx: Context) -> None:
         if voice := cast("discord.VoiceClient", ctx.voice_client):
             voice.stop()
-        await ctx.send(embed=make_embed(ctx, "👌 Skipped"))
+        await ctx.send(embed=mu.make_embed(ctx, "👌 Skipped"))
 
     @commands.hybrid_command(description="Clear the queue")
     async def clear(self, ctx: Context) -> None:
         self.bot.song_queues[ctx.guild.id].clear()
         self.bot.song_indexes[ctx.guild.id] = 0
-        await ctx.send(embed=make_embed(ctx, "👌 Queue cleared"))
+        await ctx.send(embed=mu.make_embed(ctx, "👌 Queue cleared"))
 
     @commands.hybrid_command(description="Jump to a specific song in the queue")
-    @discord.app_commands.describe(song_number="The position of the song in the queue")
-    async def jump(self, ctx: Context, *, song_number: str) -> None:
-        try:
-            index = int(song_number) - 1
-            song = self.bot.song_queues[ctx.guild.id][index]
-            self.bot.song_indexes[ctx.guild.id] = index
+    @discord.app_commands.describe(
+        song_position="The position of the song in the queue",
+    )
+    @mu.handle_index_errors
+    async def jump(self, ctx: Context, *, song_position: str) -> None:
+        song_index = int(song_position) - 1
+        song = self.bot.song_queues[ctx.guild.id][song_index]
+        self.bot.song_indexes[ctx.guild.id] = song_index
 
-            if voice := cast("discord.VoiceClient", ctx.voice_client):
-                voice.stop()
+        if voice := cast("discord.VoiceClient", ctx.voice_client):
+            voice.stop()
 
-            title = f"Jumped to song #{song_number}"
-            desc = f"[{song.title}]({song.watch_url})"
-            await ctx.send(embed=make_embed(ctx, title, desc))
-        except ValueError:
-            await ctx.send(embed=make_embed(ctx, "**Provide the song index!**"))
-        except IndexError:
-            await ctx.send(embed=make_embed(ctx, "**Index out of bounds!**"))
+        title = f"Jumped to song #{song_position}"
+        desc = f"[{song.title}]({song.watch_url})"
+        await ctx.send(embed=mu.make_embed(ctx, title, desc))
 
     @commands.hybrid_command(description="Loop the queue")
     async def loop(self, ctx: Context) -> None:
         guild_id = ctx.guild.id
         self.bot.loop_queue[guild_id] = True
-        await ctx.send(embed=make_embed(ctx, "Now looping the **queue**"))
+        await ctx.send(embed=mu.make_embed(ctx, "Now looping the **queue**"))
 
     @commands.hybrid_command(description="Disable queue looping")
     async def unloop(self, ctx: Context) -> None:
         guild_id = ctx.guild.id
         self.bot.loop_queue[guild_id] = False
-        await ctx.send(embed=make_embed(ctx, "Looping is now **disabled**"))
+        await ctx.send(embed=mu.make_embed(ctx, "Looping is now **disabled**"))
 
     @commands.hybrid_command(description="Pause the current song")
     async def pause(self, ctx: Context) -> None:
         if voice := cast("discord.VoiceClient", ctx.voice_client):
             voice.pause()
-        await ctx.send(embed=make_embed(ctx, "⏸️ Paused"))
+        await ctx.send(embed=mu.make_embed(ctx, "⏸️ Paused"))
 
     @commands.hybrid_command(description="Resume the current song")
     async def unpause(self, ctx: Context) -> None:
         if voice := cast("discord.VoiceClient", ctx.voice_client):
             voice.resume()
-        await ctx.send(embed=make_embed(ctx, "▶️ Resumed"))
+        await ctx.send(embed=mu.make_embed(ctx, "▶️ Resumed"))
 
     @commands.hybrid_command(description="Remove a song from the queue")
-    @discord.app_commands.describe(song_number="The position of the song in the queue")
-    async def remove(self, ctx: Context, *, song_number: str) -> None:
-        try:
-            song = self.bot.song_queues[ctx.guild.id].pop(int(song_number) - 1)
-            title = f"Removed song #{song_number}"
-            desc = f"[{song.title}]({song.watch_url})"
-            await ctx.send(embed=make_embed(ctx, title, desc))
-        except ValueError:
-            await ctx.send(embed=make_embed(ctx, "**Provide the song index!**"))
-        except IndexError:
-            await ctx.send(embed=make_embed(ctx, "**Index out of bounds!**"))
+    @discord.app_commands.describe(
+        song_position="The position of the song in the queue",
+    )
+    @mu.handle_index_errors
+    async def remove(self, ctx: Context, *, song_position: str) -> None:
+        song_index = int(song_position) - 1
+        song = self.bot.song_queues[ctx.guild.id].pop(song_index)
+        title = f"Removed song #{song_position}"
+        desc = f"[{song.title}]({song.watch_url})"
+        await ctx.send(embed=mu.make_embed(ctx, title, desc))
 
     @commands.hybrid_command(description="Shuffle the queue")
     async def shuffle(self, ctx: Context) -> None:
         random.shuffle(self.bot.song_queues[ctx.guild.id])
-        await ctx.send(embed=make_embed(ctx, "🔀 Queue shuffled"))
+        await ctx.send(embed=mu.make_embed(ctx, "🔀 Queue shuffled"))
 
     @commands.hybrid_command(description="Stop playing and clear the queue")
     async def stop(self, ctx: Context) -> None:
@@ -200,33 +190,29 @@ class MusicCommands(commands.Cog):
         self.bot.song_indexes[ctx.guild.id] = 0
         if voice := cast("discord.VoiceClient", ctx.voice_client):
             voice.stop()
-        await ctx.send(embed=make_embed(ctx, "🛑 Stopped and cleared queue"))
+        await ctx.send(embed=mu.make_embed(ctx, "🛑 Stopped and cleared queue"))
 
     @commands.hybrid_command(description="Move a song to another position in the queue")
-    @discord.app_commands.describe(first_number="The current position of the song")
-    @discord.app_commands.describe(second_number="The new position in the queue")
+    @discord.app_commands.describe(current_position="The current position of the song")
+    @discord.app_commands.describe(new_position="The new position in the queue")
+    @mu.handle_index_errors
     async def move(
         self,
         ctx: Context,
-        first_number: str,
+        current_position: str,
         *,
-        second_number: str,
+        new_position: str,
     ) -> None:
-        try:
-            first_index = int(first_number) - 1
-            second_index = int(second_number) - 1
-            song_queue = self.bot.song_queues[ctx.guild.id]
+        first_index = int(current_position) - 1
+        second_index = int(new_position) - 1
+        song_queue = self.bot.song_queues[ctx.guild.id]
 
-            song = song_queue.pop(first_index)
-            song_queue.insert(second_index, song)
+        song = song_queue.pop(first_index)
+        song_queue.insert(second_index, song)
 
-            title = f"Moved song #{first_number} to #{second_number}"
-            desc = f"[{song.title}]({song.watch_url})"
-            await ctx.send(embed=make_embed(ctx, title, desc))
-        except ValueError:
-            await ctx.send(embed=make_embed(ctx, "**Provide the songs index!**"))
-        except IndexError:
-            await ctx.send(embed=make_embed(ctx, "**Index out of bounds!**"))
+        title = f"Moved song #{current_position} to #{new_position}"
+        desc = f"[{song.title}]({song.watch_url})"
+        await ctx.send(embed=mu.make_embed(ctx, title, desc))
 
     @commands.hybrid_command(description="Show detailed info about the current song")
     async def info(self, ctx: Context) -> None:
@@ -237,7 +223,7 @@ class MusicCommands(commands.Cog):
         )
 
         if now_playing is None:
-            await ctx.send(embed=make_embed(ctx, "❌ There is no song playing!"))
+            await ctx.send(embed=mu.make_embed(ctx, "❌ There is no song playing!"))
             return
 
         song, start_time = self.bot.cur_songs[ctx.guild.id]
@@ -259,12 +245,10 @@ class MusicCommands(commands.Cog):
         except ValueError:
             queue_pos = 1
 
-        duration_string = (
-            f"{utils.time_format(progress)} / {utils.time_format(total_length)}"
-        )
+        duration_string = f"{mu.time_format(progress)} / {mu.time_format(total_length)}"
 
         await ctx.send(
-            embed=make_embed(
+            embed=mu.make_embed(
                 ctx,
                 song.title,
                 description=(

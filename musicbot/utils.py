@@ -1,8 +1,10 @@
+import functools
 import re
 import time
+from collections.abc import Awaitable, Callable
 
 import discord
-from discord.ext.commands import Context
+from discord.ext.commands import Cog, Context
 
 YOUTUBE_PLAYLIST_REGEX = re.compile(
     r"(?:http?s?://)?(?:www\.|m\.)?(?:music.)?youtu\.?be(?:\.com)?"
@@ -73,3 +75,23 @@ def split_to_pages(lines: list[str]) -> list[list[str]]:
         pages.append(current_page)
 
     return pages
+
+
+def handle_index_errors(
+    func: Callable[[Cog, Context, str, str | None], Awaitable[None]],
+) -> Callable[[Cog, Context, str, str | None], Awaitable[None]]:
+    @functools.wraps(func)
+    async def wrapper(
+        self: Cog,
+        ctx: Context,
+        *args: str,
+        **kwargs: str,
+    ) -> None:
+        try:
+            await func(self, ctx, *args, **kwargs)
+        except ValueError:
+            await ctx.send(embed=make_embed(ctx, "**Provide the song's index!**"))
+        except IndexError:
+            await ctx.send(embed=make_embed(ctx, "**Index out of bounds!**"))
+
+    return wrapper

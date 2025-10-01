@@ -3,16 +3,14 @@ from collections import defaultdict
 
 import discord
 from discord import VoiceClient
-from discord.ext import commands
-from discord.ext.commands import Context
+from discord.ext.commands import Bot, Context
 from pytubefix import Playlist, YouTube
 
-import musicbot
-from musicbot import utils
-from musicbot.utils import make_embed
+import musicbot as mb
+import musicbot.utils as mu
 
 
-class MusicBot(commands.Bot):
+class MusicBot(Bot):
     def __init__(self, prefix: str) -> None:
         intents = discord.Intents(
             guilds=True,
@@ -28,14 +26,14 @@ class MusicBot(commands.Bot):
         self.loop_queue = defaultdict[int, bool](bool)
 
     async def setup_hook(self) -> None:
-        await self.add_cog(musicbot.MusicCommands(self))
+        await self.add_cog(mb.MusicCommands(self))
         await self.tree.sync()
 
     async def add_playlist(self, ctx: Context, playlist: Playlist) -> None:
         self.song_queues[ctx.guild.id].extend(playlist.videos)
 
         await ctx.send(
-            embed=make_embed(
+            embed=mu.make_embed(
                 ctx,
                 f"📚 Playlist Queued: {playlist.title}",
                 description=f"**{len(playlist)} songs added**",
@@ -48,12 +46,12 @@ class MusicBot(commands.Bot):
         self.song_queues[ctx.guild.id].append(song)
 
         await ctx.send(
-            embed=make_embed(
+            embed=mu.make_embed(
                 ctx,
                 f"🎵 Queued - at position #{len(self.song_queues[ctx.guild.id])}",
                 description=f"[{song.title}]({song.watch_url}) by "
                 f"[{song.author}]({song.channel_url}) "
-                f"`{utils.time_format(song.length)}`",
+                f"`{mu.time_format(song.length)}`",
                 thumbnail_url=song.thumbnail_url,
             ),
         )
