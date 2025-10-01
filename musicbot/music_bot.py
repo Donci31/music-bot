@@ -34,8 +34,8 @@ class MusicBot(Bot):
 
         await ctx.send(
             embed=mu.make_embed(
-                ctx,
-                f"📚 Playlist Queued: {playlist.title}",
+                ctx=ctx,
+                title=f"📚 Playlist Queued: {playlist.title}",
                 description=f"**{len(playlist)} songs added**",
                 embed_url=playlist.playlist_url,
                 thumbnail_url=playlist.thumbnail_url,
@@ -47,8 +47,8 @@ class MusicBot(Bot):
 
         await ctx.send(
             embed=mu.make_embed(
-                ctx,
-                f"🎵 Queued - at position #{len(self.song_queues[ctx.guild.id])}",
+                ctx=ctx,
+                title=f"🎵 Queued - at position #{len(self.song_queues[ctx.guild.id])}",
                 description=f"[{song.title}]({song.watch_url}) by "
                 f"[{song.author}]({song.channel_url}) "
                 f"`{mu.time_format(song.length)}`",
