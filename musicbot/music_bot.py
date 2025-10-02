@@ -1,4 +1,6 @@
+import asyncio
 import time
+from asyncio import Task
 from collections import defaultdict
 
 import discord
@@ -24,6 +26,7 @@ class MusicBot(Bot):
         self.song_indexes = defaultdict[int, int](int)
         self.cur_songs = defaultdict[int, tuple[YouTube, int] | None](lambda: None)
         self.loop_queue = defaultdict[int, bool](bool)
+        self.idle_checkers = defaultdict[int, Task[None]](lambda: None)
 
     async def setup_hook(self) -> None:
         await self.add_cog(mb.MusicCommands(self))
@@ -55,6 +58,15 @@ class MusicBot(Bot):
                 thumbnail_url=song.thumbnail_url,
             ),
         )
+
+    async def idle_checker(
+        self,
+        guild_id: int,
+        voice: VoiceClient,
+    ) -> None:
+        await asyncio.sleep(180)
+        if self.cur_songs[guild_id] is None and not voice.is_playing():
+            await voice.disconnect()
 
     def start_playing(self, guild_id: int, voice: VoiceClient) -> None:
         cur_index = self.song_indexes[guild_id]
@@ -92,3 +104,11 @@ class MusicBot(Bot):
             self.start_playing(guild_id, voice)
         else:
             self.cur_songs[guild_id] = None
+
+            prev_task = self.idle_checkers[guild_id]
+            if prev_task and not prev_task.done():
+                prev_task.cancel()
+
+            self.idle_checkers[guild_id] = self.loop.create_task(
+                self.idle_checker(guild_id, voice),
+            )
