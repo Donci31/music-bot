@@ -1,74 +1,67 @@
+from __future__ import annotations
+
 import random
 import time
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 import discord
 from discord.ext import commands
 from discord.ext.commands import Cog, Context
 from pytubefix import Playlist, Search, YouTube
 
-import musicbot as mb
 import musicbot.utils as mu
+
+if TYPE_CHECKING:
+    from music_bot import MusicBot
 
 
 class MusicCommands(Cog):
-    def __init__(self, bot: mb.MusicBot) -> None:
+    def __init__(self, bot: MusicBot) -> None:
         self.bot = bot
 
     @commands.hybrid_command(description="Play a song or playlist from YouTube")
     @discord.app_commands.describe(song="The YouTube link or search query")
+    @mu.handle_voice_channel_join
     async def play(self, ctx: Context, *, song: str) -> None:
-        guild_id = ctx.guild.id
-        voice = cast("discord.VoiceClient", ctx.voice_client)
-
-        if ctx.author.voice is None:
-            await ctx.send(embed=mu.make_embed(ctx, "**Join a voice channel!**"))
-            return
-
-        if voice is None or not voice.is_connected():
-            voice = await ctx.author.voice.channel.connect()
-
         await ctx.defer()
 
-        match song:
-            case s if playlist_match := mu.YOUTUBE_PLAYLIST_REGEX.fullmatch(s):
-                playlist_id = playlist_match.group("playlist_id")
-                playlist = Playlist(
-                    f"https://www.youtube.com/playlist?list={playlist_id}",
-                )
-                await self.bot.add_playlist(ctx, playlist)
+        if playlist_match := mu.YOUTUBE_PLAYLIST_REGEX.fullmatch(song):
+            playlist_id = playlist_match.group("playlist_id")
+            playlist = Playlist(
+                f"https://www.youtube.com/playlist?list={playlist_id}",
+            )
+            await self.bot.add_playlist(ctx, playlist)
 
-            case s if youtube_match := mu.YOUTUBE_WATCH_REGEX.fullmatch(s):
-                song_id = youtube_match.group("youtube_id")
-                youtube_song = YouTube(f"https://www.youtube.com/watch?v={song_id}")
-                await self.bot.add_song(ctx, youtube_song)
+        elif youtube_match := mu.YOUTUBE_WATCH_REGEX.fullmatch(song):
+            song_id = youtube_match.group("youtube_id")
+            youtube_song = YouTube(f"https://www.youtube.com/watch?v={song_id}")
+            await self.bot.add_song(ctx, youtube_song)
 
-            case _:
-                youtube_song = Search(song).videos[0]
-                await self.bot.add_song(ctx, youtube_song)
-
-        if not voice.is_playing():
-            self.bot.start_playing(guild_id, voice)
+        else:
+            youtube_song = Search(song).videos[0]
+            await self.bot.add_song(ctx, youtube_song)
 
     @commands.hybrid_command(
         description="Show the current music queue with page selector",
     )
     @discord.app_commands.describe(page_number="The page number to view")
+    @mu.handle_index_errors
     async def queue(self, ctx: Context, page_number: int | None = None) -> None:
-        default_per_page = 10
-
         await ctx.defer()
 
-        queue = self.bot.song_queues[ctx.guild.id]
-
+        guild_id = ctx.guild.id
         now_playing = (
-            self.bot.cur_songs[ctx.guild.id][0]
-            if self.bot.cur_songs[ctx.guild.id]
-            else None
+            self.bot.cur_songs[guild_id][0] if self.bot.cur_songs[guild_id] else None
         )
+        queue = self.bot.song_queues[guild_id]
 
-        if not queue and now_playing is None:
-            await ctx.send(embed=mu.make_embed(ctx, "❌ No songs currently playing."))
+        if not now_playing and not queue:
+            await ctx.send(
+                embed=mu.make_embed(
+                    ctx=ctx,
+                    title="❌ No song is currently playing.",
+                ),
+            )
             return
 
         embed = mu.make_embed(
@@ -77,41 +70,25 @@ class MusicCommands(Cog):
         )
 
         if now_playing:
-            now_playing_text = (
-                f"▶️ [{now_playing.title}]({now_playing.watch_url}) "
-                f"`{mu.time_format(now_playing.length)}`"
-            )
             embed.add_field(
                 name="Now Playing",
-                value=now_playing_text,
+                value=(
+                    f"▶️ [{now_playing.title}]({now_playing.watch_url}) "
+                    f"`{mu.time_format(now_playing.length)}`"
+                ),
                 inline=False,
             ).set_thumbnail(url=now_playing.thumbnail_url)
 
-            start_index = queue.index(now_playing)
-        else:
-            start_index = -1
-
-        lines = [
-            f"**{i})** [{s.title}]({s.watch_url}) `{mu.time_format(s.length)}`\n"
-            for i, s in enumerate(queue, start=1)
-        ]
-
-        pages = mu.split_to_pages(lines)
-
-        if page_number is None:
-            cur_page_number, cur_page = next(
-                (page_index, page)
-                for page_index, page in enumerate(pages, start=1)
-                if lines[start_index] in page
+        if queue:
+            cur_page_number, len_pages, cur_page = mu.get_queue_page(
+                queue=queue,
+                current_index=self.bot.song_indexes[guild_id],
+                page_number=page_number,
             )
-        else:
-            cur_page_number, cur_page = page_number, pages[page_number - 1]
 
-        if cur_page[: min(len(cur_page), default_per_page)]:
-            number_of_pages = len(pages)
             embed.add_field(
-                name=f"Queue Page {cur_page_number}/{number_of_pages}",
-                value="".join(cur_page),
+                name=f"Queue Page {cur_page_number}/{len_pages}",
+                value=cur_page,
                 inline=False,
             )
 
@@ -134,7 +111,7 @@ class MusicCommands(Cog):
     @commands.hybrid_command(description="Clear the queue")
     async def clear(self, ctx: Context) -> None:
         self.bot.song_queues[ctx.guild.id].clear()
-        self.bot.song_indexes[ctx.guild.id] = 0
+        self.bot.song_indexes[ctx.guild.id] = -1
 
         await ctx.send(
             embed=mu.make_embed(
@@ -147,11 +124,12 @@ class MusicCommands(Cog):
     @discord.app_commands.describe(
         song_position="The position of the song in the queue",
     )
+    @mu.handle_voice_channel_join
     @mu.handle_index_errors
     async def jump(self, ctx: Context, *, song_position: str) -> None:
         song_index = int(song_position) - 1
         song = self.bot.song_queues[ctx.guild.id][song_index]
-        self.bot.song_indexes[ctx.guild.id] = song_index
+        self.bot.song_indexes[ctx.guild.id] = song_index - 1
 
         if voice := cast("discord.VoiceClient", ctx.voice_client):
             voice.stop()
@@ -166,8 +144,7 @@ class MusicCommands(Cog):
 
     @commands.hybrid_command(description="Loop the queue")
     async def loop(self, ctx: Context) -> None:
-        guild_id = ctx.guild.id
-        self.bot.loop_queue[guild_id] = True
+        self.bot.loop_queue[ctx.guild.id] = True
 
         await ctx.send(
             embed=mu.make_embed(
@@ -178,8 +155,7 @@ class MusicCommands(Cog):
 
     @commands.hybrid_command(description="Disable queue looping")
     async def unloop(self, ctx: Context) -> None:
-        guild_id = ctx.guild.id
-        self.bot.loop_queue[guild_id] = False
+        self.bot.loop_queue[ctx.guild.id] = False
 
         await ctx.send(
             embed=mu.make_embed(
@@ -243,7 +219,7 @@ class MusicCommands(Cog):
     @commands.hybrid_command(description="Stop playing and clear the queue")
     async def stop(self, ctx: Context) -> None:
         self.bot.song_queues[ctx.guild.id].clear()
-        self.bot.song_indexes[ctx.guild.id] = 0
+        self.bot.song_indexes[ctx.guild.id] = -1
         if voice := cast("discord.VoiceClient", ctx.voice_client):
             voice.stop()
 
@@ -282,49 +258,40 @@ class MusicCommands(Cog):
 
     @commands.hybrid_command(description="Show detailed info about the current song")
     async def info(self, ctx: Context) -> None:
-        now_playing = (
-            self.bot.cur_songs[ctx.guild.id][0]
-            if self.bot.cur_songs[ctx.guild.id]
-            else None
-        )
-
-        if now_playing is None:
-            await ctx.send(embed=mu.make_embed(ctx, "❌ There is no song playing!"))
+        if not self.bot.cur_songs[ctx.guild.id]:
+            await ctx.send(
+                embed=mu.make_embed(
+                    ctx=ctx,
+                    title="❌ No song is currently playing.",
+                ),
+            )
             return
 
-        song, start_time = self.bot.cur_songs[ctx.guild.id]
-        progress = round(time.time()) - start_time
-        total_length = song.length
+        now_playing, start_time = self.bot.cur_songs[ctx.guild.id]
+        progress = round(time.time() - start_time)
+        total_length = now_playing.length or 0
 
-        bar_length = 20
-        filled_length = int(progress / total_length * bar_length) if total_length else 0
-        bar = "█" * filled_length + "─" * (bar_length - filled_length)
-
-        loop_status = (
-            "🔁 Queue Looping"
-            if self.bot.loop_queue.get(ctx.guild.id, False)
-            else "No Loop"
-        )
-
-        try:
-            queue_pos = self.bot.song_queues[ctx.guild.id].index(song) + 1
-        except ValueError:
-            queue_pos = 1
-
+        uploader = f"[{now_playing.author}]({now_playing.channel_url})"
         duration_string = f"{mu.time_format(progress)} / {mu.time_format(total_length)}"
+        progress_bar = mu.create_progress_bar(
+            progress=progress,
+            total_length=total_length,
+        )
+        loop_status = (
+            "🔁 Queue Looping" if self.bot.loop_queue[ctx.guild.id] else "No Loop"
+        )
 
         await ctx.send(
             embed=mu.make_embed(
                 ctx=ctx,
-                title=song.title,
+                title=now_playing.title,
                 description=(
-                    f"**Uploader:** {song.author}\n"
-                    f"**Queue Position:** {queue_pos}\n"
+                    f"**Uploader:** {uploader}\n"
                     f"**Duration:** `{duration_string}`\n"
-                    f"**Progress:** `{bar}`\n"
+                    f"**Progress:** `{progress_bar}`\n"
                     f"**Loop Status:** {loop_status}"
                 ),
-                embed_url=song.watch_url,
-                thumbnail_url=song.thumbnail_url,
+                embed_url=now_playing.watch_url,
+                thumbnail_url=now_playing.thumbnail_url,
             ),
         )
