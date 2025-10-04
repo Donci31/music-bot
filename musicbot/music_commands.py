@@ -59,7 +59,7 @@ class MusicCommands(Cog):
             await ctx.send(
                 embed=mu.make_embed(
                     ctx=ctx,
-                    title="❌ No song is currently playing.",
+                    title="⚠️ No song is currently playing.",
                 ),
             )
             return
@@ -116,7 +116,7 @@ class MusicCommands(Cog):
         await ctx.send(
             embed=mu.make_embed(
                 ctx=ctx,
-                title="👌 Queue cleared",
+                title="🧹 Queue cleared",
             ),
         )
 
@@ -137,7 +137,7 @@ class MusicCommands(Cog):
         await ctx.send(
             embed=mu.make_embed(
                 ctx=ctx,
-                title=f"Jumped to song #{song_position}",
+                title=f"⏩ Jumped to song #{song_position}",
                 description=f"[{song.title}]({song.watch_url})",
             ),
         )
@@ -149,7 +149,7 @@ class MusicCommands(Cog):
         await ctx.send(
             embed=mu.make_embed(
                 ctx=ctx,
-                title="Now looping the **queue**",
+                title="🔁 Now looping the queue",
             ),
         )
 
@@ -160,7 +160,7 @@ class MusicCommands(Cog):
         await ctx.send(
             embed=mu.make_embed(
                 ctx=ctx,
-                title="Looping is now **disabled**",
+                title="🔁❌ Looping is now disabled",
             ),
         )
 
@@ -200,7 +200,7 @@ class MusicCommands(Cog):
         await ctx.send(
             embed=mu.make_embed(
                 ctx=ctx,
-                title=f"Removed song #{song_position}",
+                title=f"🗑️ Removed song #{song_position}",
                 description=f"[{song.title}]({song.watch_url})",
             ),
         )
@@ -251,7 +251,7 @@ class MusicCommands(Cog):
         await ctx.send(
             embed=mu.make_embed(
                 ctx=ctx,
-                title=f"Moved song #{current_position} to #{new_position}",
+                title=f"↕️ Moved song #{current_position} to #{new_position}",
                 description=f"[{song.title}]({song.watch_url})",
             ),
         )
@@ -262,7 +262,7 @@ class MusicCommands(Cog):
             await ctx.send(
                 embed=mu.make_embed(
                     ctx=ctx,
-                    title="❌ No song is currently playing.",
+                    title="⚠️ No song is currently playing.",
                 ),
             )
             return

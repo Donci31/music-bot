@@ -48,7 +48,7 @@ class MusicBot(Bot):
         await ctx.send(
             embed=mu.make_embed(
                 ctx=ctx,
-                title=f"📚 Playlist Queued: {playlist.title}",
+                title=f"🎶 Playlist Queued: {playlist.title}",
                 description=f"**{playlist.length} songs added**",
                 embed_url=playlist.playlist_url,
                 thumbnail_url=playlist.thumbnail_url,

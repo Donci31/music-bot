@@ -125,14 +125,14 @@ def handle_index_errors(
             await ctx.send(
                 embed=make_embed(
                     ctx=ctx,
-                    title="**Provide a number!**",
+                    title="❌ Provide a number!",
                 ),
             )
         except IndexError:
             await ctx.send(
                 embed=make_embed(
                     ctx=ctx,
-                    title="**Number is out of range!**",
+                    title="❌ Number is out of range!",
                 ),
             )
 
@@ -153,7 +153,7 @@ def handle_voice_channel_join(
             await ctx.send(
                 embed=make_embed(
                     ctx=ctx,
-                    title="**Join a voice channel!**",
+                    title="🔊 Join a voice channel!",
                 ),
             )
             return
