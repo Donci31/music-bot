@@ -12,7 +12,7 @@ from pytubefix import Playlist, Search, YouTube
 import musicbot.utils as mu
 
 if TYPE_CHECKING:
-    from music_bot import MusicBot
+    from .music_bot import MusicBot
 
 
 class MusicCommands(Cog):
