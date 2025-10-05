@@ -12,8 +12,8 @@ The bot supports various commands to control playback, queue songs, and provide 
 * **⚠️ Error Handling:** The bot gracefully handles errors, providing informative messages to users when issues occur.
 
 ## 📦 Installation
-1. You need to have [uv](https://docs.astral.sh/uv/getting-started/installation/) and [FFmpeg](https://ffmpeg.org/download.html) installed and its bin folder added to your path.
-2. Clone the repository: `git clone https://github.com/Donci31/music-bot/`.
+1. You need to have [uv](https://docs.astral.sh/uv/getting-started/installation/) and [FFmpeg](https://ffmpeg.org/download.html) installed and FFmpegs bin folder added to your path.
+2. Clone and enter the repository: `git clone https://github.com/Donci31/music-bot/ && cd music-bot`
 3. Obtain a bot token by creating a bot account on the [Discord Developer Portal](https://discord.com/developers/applications) and invite the bot to your Discord server using the invite link.
 4. Create a .env file with same context as .env.example and insert the token, and the bot prefix there.
 5. Run the main script: `uv run main.py`.
