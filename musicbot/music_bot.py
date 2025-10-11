@@ -8,7 +8,7 @@ from discord import VoiceClient
 from discord.ext.commands import Bot, Context
 from pytubefix import Playlist, YouTube
 
-import musicbot as mb
+import musicbot.music_commands as mc
 import musicbot.utils as mu
 
 
@@ -24,7 +24,11 @@ class MusicBot(Bot):
 
         self.song_queues = defaultdict[int, list[YouTube]](list)
         self.song_indexes = defaultdict[int, int](lambda: -1)
-        self.cur_songs = defaultdict[int, tuple[YouTube, float] | None](lambda: None)
+        self.cur_songs = defaultdict[int, YouTube | None](lambda: None)
+
+        self.progress_time = defaultdict[int, float](float)
+        self.pause_time = defaultdict[int, float](float)
+
         self.loop_queue = defaultdict[int, bool](bool)
         self.idle_checkers = defaultdict[int, Task[None]](lambda: None)
 
@@ -39,7 +43,7 @@ class MusicBot(Bot):
         self.timeout_second = 5 * 60
 
     async def setup_hook(self) -> None:
-        await self.add_cog(mb.MusicCommands(self))
+        await self.add_cog(mc.MusicCommands(self))
         await self.tree.sync()
 
     async def add_playlist(self, ctx: Context, playlist: Playlist) -> None:
@@ -69,11 +73,7 @@ class MusicBot(Bot):
             ),
         )
 
-    async def idle_checker(
-        self,
-        guild_id: int,
-        voice: VoiceClient,
-    ) -> None:
+    async def idle_checker(self, guild_id: int, voice: VoiceClient) -> None:
         await asyncio.sleep(self.timeout_second)
         if self.cur_songs[guild_id] is None and not voice.is_playing():
             await voice.disconnect()
@@ -97,9 +97,10 @@ class MusicBot(Bot):
             self.song_indexes[guild_id] = -1
 
         self.song_indexes[guild_id] += 1
-        cur_song = cur_queue[self.song_indexes[guild_id]]
-        self.cur_songs[guild_id] = (cur_song, time.time())
-        song_streams = cur_song.streams
+        self.cur_songs[guild_id] = cur_queue[self.song_indexes[guild_id]]
+        self.progress_time[guild_id] = time.monotonic()
+        self.pause_time[guild_id] = 0.0
+        song_streams = self.cur_songs[guild_id].streams
 
         if song_audio := song_streams.get_audio_only(subtype="webm"):
             self.ffmpeg_options["codec"] = "copy"

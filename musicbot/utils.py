@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import functools
 import re
 import time
@@ -12,7 +10,7 @@ if TYPE_CHECKING:
 
     from discord.ext.commands import Context
 
-    from musicbot import MusicCommands
+    from .music_commands import MusicCommands
 
 YOUTUBE_PLAYLIST_REGEX = re.compile(
     r"(?:http?s?://)?(?:www\.|m\.)?(?:music.)?youtu\.?be(?:\.com)?"

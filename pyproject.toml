@@ -5,22 +5,22 @@ description = "Music bot for playing music on Discord from Youtube."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "discord-py>=2.6.3",
+    "discord-py>=2.6.4",
     "pynacl>=1.6.0",
     "python-dotenv>=1.1.1",
-    "pytubefix>=9.5.1",
+    "pytubefix>=10.0.0",
 ]
 
 [dependency-groups]
 dev = [
-    "ruff>=0.13.1",
-    "ty>=0.0.1a21",
+    "ruff>=0.14.0",
+    "ty>=0.0.1a22",
 ]
 
 [tool.ruff.lint]
 select = ["ALL"]
 
-ignore = ["D", "CPY001", "PLR6301"]
+ignore = ["D", "CPY001", "PLR6301", "TC004"]
 
 preview = true
 

@@ -1,10 +1,6 @@
-FROM node:24-alpine AS node_base
-
-FROM ghcr.io/astral-sh/uv:python3.13-alpine
+FROM ghcr.io/astral-sh/uv:python3.14-alpine
 
 WORKDIR /app/
-
-COPY --from=node_base /usr/local/bin/node /usr/local/bin/
 
 COPY pyproject.toml uv.lock .python-version ./
 

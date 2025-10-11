@@ -1,5 +1,4 @@
-from __future__ import annotations
-
+import math
 import random
 import time
 from typing import TYPE_CHECKING, cast
@@ -50,9 +49,7 @@ class MusicCommands(Cog):
         await ctx.defer()
 
         guild_id = ctx.guild.id
-        now_playing = (
-            self.bot.cur_songs[guild_id][0] if self.bot.cur_songs[guild_id] else None
-        )
+        now_playing = self.bot.cur_songs[guild_id]
         queue = self.bot.song_queues[guild_id]
 
         if not now_playing and not queue:
@@ -169,6 +166,9 @@ class MusicCommands(Cog):
         if voice := cast("discord.VoiceClient", ctx.voice_client):
             voice.pause()
 
+        if not self.bot.pause_time[ctx.guild.id]:
+            self.bot.pause_time[ctx.guild.id] = time.monotonic()
+
         await ctx.send(
             embed=mu.make_embed(
                 ctx=ctx,
@@ -180,6 +180,11 @@ class MusicCommands(Cog):
     async def unpause(self, ctx: Context) -> None:
         if voice := cast("discord.VoiceClient", ctx.voice_client):
             voice.resume()
+
+        self.bot.progress_time[ctx.guild.id] += (
+            time.monotonic() - self.bot.pause_time[ctx.guild.id]
+        )
+        self.bot.pause_time[ctx.guild.id] = 0.0
 
         await ctx.send(
             embed=mu.make_embed(
@@ -267,8 +272,16 @@ class MusicCommands(Cog):
             )
             return
 
-        now_playing, start_time = self.bot.cur_songs[ctx.guild.id]
-        progress = round(time.time() - start_time)
+        now_playing = self.bot.cur_songs[ctx.guild.id]
+        progress = math.floor(
+            time.monotonic()
+            - self.bot.progress_time[ctx.guild.id]
+            - (
+                time.monotonic() - self.bot.pause_time[ctx.guild.id]
+                if self.bot.pause_time[ctx.guild.id]
+                else 0.0
+            ),
+        )
         total_length = now_playing.length or 0
 
         uploader = f"[{now_playing.author}]({now_playing.channel_url})"
@@ -291,7 +304,7 @@ class MusicCommands(Cog):
                     f"**Progress:** `{progress_bar}`\n"
                     f"**Loop Status:** {loop_status}"
                 ),
-                embed_url=now_playing.watch_url,
+                embed_url=f"{now_playing.watch_url}&t={progress}",
                 thumbnail_url=now_playing.thumbnail_url,
             ),
         )
