@@ -147,7 +147,9 @@ def handle_voice_channel_join(
         *args: str,
         **kwargs: str,
     ) -> None:
-        if ctx.author.voice is None:
+        author = cast("discord.Member", ctx.author)
+
+        if author.voice is None or author.voice.channel is None:
             await ctx.send(
                 embed=make_embed(
                     ctx=ctx,
@@ -159,11 +161,18 @@ def handle_voice_channel_join(
         voice = cast("discord.VoiceClient", ctx.voice_client)
 
         if voice is None or not voice.is_connected():
-            voice = await ctx.author.voice.channel.connect()
+            voice = await author.voice.channel.connect()
 
         await func(music_commands, ctx, *args, **kwargs)
 
         if not voice.is_playing():
-            music_commands.bot.start_playing(ctx.guild.id, voice)
+            music_commands.bot.start_playing(get_guild_id(ctx), voice)
 
     return wrapper
+
+
+def get_guild_id(ctx: Context) -> int:
+    if ctx.guild is None:
+        error_msg = "Command must be used in a guild!"
+        raise ValueError(error_msg)
+    return ctx.guild.id

@@ -4,8 +4,8 @@ WORKDIR /app/
 
 COPY pyproject.toml uv.lock .python-version ./
 
-RUN apk add --no-cache ffmpeg && \
-    uv sync --frozen --no-dev --compile-bytecode
+RUN apk add --no-cache ffmpeg=6.1.2-r2 && \
+  uv sync --frozen --no-dev --compile-bytecode
 
 COPY ./ ./
 

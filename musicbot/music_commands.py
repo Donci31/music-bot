@@ -48,7 +48,7 @@ class MusicCommands(Cog):
     async def queue(self, ctx: Context, page_number: int | None = None) -> None:
         await ctx.defer()
 
-        guild_id = ctx.guild.id
+        guild_id = mu.get_guild_id(ctx)
         now_playing = self.bot.cur_songs[guild_id]
         queue = self.bot.song_queues[guild_id]
 
@@ -107,8 +107,10 @@ class MusicCommands(Cog):
 
     @commands.hybrid_command(description="Clear the queue")
     async def clear(self, ctx: Context) -> None:
-        self.bot.song_queues[ctx.guild.id].clear()
-        self.bot.song_indexes[ctx.guild.id] = -1
+        guild_id = mu.get_guild_id(ctx)
+
+        self.bot.song_queues[guild_id].clear()
+        self.bot.song_indexes[guild_id] = -1
 
         await ctx.send(
             embed=mu.make_embed(
@@ -125,8 +127,10 @@ class MusicCommands(Cog):
     @mu.handle_index_errors
     async def jump(self, ctx: Context, *, song_position: str) -> None:
         song_index = int(song_position) - 1
-        song = self.bot.song_queues[ctx.guild.id][song_index]
-        self.bot.song_indexes[ctx.guild.id] = song_index - 1
+        guild_id = mu.get_guild_id(ctx)
+
+        song = self.bot.song_queues[guild_id][song_index]
+        self.bot.song_indexes[guild_id] = song_index - 1
 
         if voice := cast("discord.VoiceClient", ctx.voice_client):
             voice.stop()
@@ -141,7 +145,7 @@ class MusicCommands(Cog):
 
     @commands.hybrid_command(description="Loop the queue")
     async def loop(self, ctx: Context) -> None:
-        self.bot.loop_queue[ctx.guild.id] = True
+        self.bot.loop_queue[mu.get_guild_id(ctx)] = True
 
         await ctx.send(
             embed=mu.make_embed(
@@ -152,7 +156,7 @@ class MusicCommands(Cog):
 
     @commands.hybrid_command(description="Disable queue looping")
     async def unloop(self, ctx: Context) -> None:
-        self.bot.loop_queue[ctx.guild.id] = False
+        self.bot.loop_queue[mu.get_guild_id(ctx)] = False
 
         await ctx.send(
             embed=mu.make_embed(
@@ -166,8 +170,10 @@ class MusicCommands(Cog):
         if voice := cast("discord.VoiceClient", ctx.voice_client):
             voice.pause()
 
-        if not self.bot.pause_time[ctx.guild.id]:
-            self.bot.pause_time[ctx.guild.id] = time.monotonic()
+        guild_id = mu.get_guild_id(ctx)
+
+        if not self.bot.pause_time[guild_id]:
+            self.bot.pause_time[guild_id] = time.monotonic()
 
         await ctx.send(
             embed=mu.make_embed(
@@ -181,10 +187,12 @@ class MusicCommands(Cog):
         if voice := cast("discord.VoiceClient", ctx.voice_client):
             voice.resume()
 
-        self.bot.progress_time[ctx.guild.id] += (
-            time.monotonic() - self.bot.pause_time[ctx.guild.id]
+        guild_id = mu.get_guild_id(ctx)
+
+        self.bot.progress_time[guild_id] += (
+            time.monotonic() - self.bot.pause_time[guild_id]
         )
-        self.bot.pause_time[ctx.guild.id] = 0.0
+        self.bot.pause_time[guild_id] = 0.0
 
         await ctx.send(
             embed=mu.make_embed(
@@ -200,7 +208,7 @@ class MusicCommands(Cog):
     @mu.handle_index_errors
     async def remove(self, ctx: Context, *, song_position: str) -> None:
         song_index = int(song_position) - 1
-        song = self.bot.song_queues[ctx.guild.id].pop(song_index)
+        song = self.bot.song_queues[mu.get_guild_id(ctx)].pop(song_index)
 
         await ctx.send(
             embed=mu.make_embed(
@@ -212,7 +220,7 @@ class MusicCommands(Cog):
 
     @commands.hybrid_command(description="Shuffle the queue")
     async def shuffle(self, ctx: Context) -> None:
-        random.shuffle(self.bot.song_queues[ctx.guild.id])
+        random.shuffle(self.bot.song_queues[mu.get_guild_id(ctx)])
 
         await ctx.send(
             embed=mu.make_embed(
@@ -223,8 +231,10 @@ class MusicCommands(Cog):
 
     @commands.hybrid_command(description="Stop playing and clear the queue")
     async def stop(self, ctx: Context) -> None:
-        self.bot.song_queues[ctx.guild.id].clear()
-        self.bot.song_indexes[ctx.guild.id] = -1
+        guild_id = mu.get_guild_id(ctx)
+
+        self.bot.song_queues[guild_id].clear()
+        self.bot.song_indexes[guild_id] = -1
         if voice := cast("discord.VoiceClient", ctx.voice_client):
             voice.stop()
 
@@ -248,7 +258,7 @@ class MusicCommands(Cog):
     ) -> None:
         first_index = int(current_position) - 1
         second_index = int(new_position) - 1
-        song_queue = self.bot.song_queues[ctx.guild.id]
+        song_queue = self.bot.song_queues[mu.get_guild_id(ctx)]
 
         song = song_queue.pop(first_index)
         song_queue.insert(second_index, song)
@@ -263,7 +273,9 @@ class MusicCommands(Cog):
 
     @commands.hybrid_command(description="Show detailed info about the current song")
     async def info(self, ctx: Context) -> None:
-        if not self.bot.cur_songs[ctx.guild.id]:
+        guild_id = mu.get_guild_id(ctx)
+
+        if not (now_playing := self.bot.cur_songs[guild_id]):
             await ctx.send(
                 embed=mu.make_embed(
                     ctx=ctx,
@@ -272,13 +284,12 @@ class MusicCommands(Cog):
             )
             return
 
-        now_playing = self.bot.cur_songs[ctx.guild.id]
         progress = math.floor(
             time.monotonic()
-            - self.bot.progress_time[ctx.guild.id]
+            - self.bot.progress_time[guild_id]
             - (
-                time.monotonic() - self.bot.pause_time[ctx.guild.id]
-                if self.bot.pause_time[ctx.guild.id]
+                time.monotonic() - self.bot.pause_time[guild_id]
+                if self.bot.pause_time[guild_id]
                 else 0.0
             ),
         )
@@ -290,9 +301,7 @@ class MusicCommands(Cog):
             progress=progress,
             total_length=total_length,
         )
-        loop_status = (
-            "🔁 Queue Looping" if self.bot.loop_queue[ctx.guild.id] else "No Loop"
-        )
+        loop_status = "🔁 Queue Looping" if self.bot.loop_queue[guild_id] else "No Loop"
 
         await ctx.send(
             embed=mu.make_embed(
