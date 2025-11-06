@@ -22,9 +22,10 @@ The bot supports various commands to control playback, queue songs,
 ## 📦 Installation
 
 1. You need to have
+ [git](https://git-scm.com/install/windows),
  [uv](https://docs.astral.sh/uv/getting-started/installation/)
- and [FFmpeg](https://ffmpeg.org/download.html) installed
- and FFmpegs bin folder added to your path.
+ and [FFmpeg](https://ffmpeg.org/download.html) installed:
+ `winget install --id=FFmpeg.FFmpeg --id=astral-sh.uv --id=Git.Git`
 2. Clone and enter the repository:
  `git clone https://github.com/Donci31/music-bot/ && cd music-bot`
 3. Obtain a bot token by creating a bot account on the [Discord Developer Portal](https://discord.com/developers/applications)
