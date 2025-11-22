@@ -6,9 +6,9 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
   "discord-py>=2.6.4",
-  "pynacl>=1.6.0",
+  "pynacl>=1.6.1",
   "python-dotenv>=1.2.1",
-  "pytubefix>=10.1.1",
+  "pytubefix>=10.3.5",
 ]
 
 [tool.ruff.lint]
