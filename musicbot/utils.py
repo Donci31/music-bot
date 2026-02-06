@@ -12,6 +12,10 @@ if TYPE_CHECKING:
 
     from .music_commands import MusicCommands
 
+SPOTIFY_REGEX = re.compile(
+    r"https?:\/\/open\.spotify\.com\/track\/(?P<spotify_id>[A-Za-z0-9]{22})(\?.*)?",
+)
+
 YOUTUBE_PLAYLIST_REGEX = re.compile(
     r"(?:http?s?://)?(?:www\.|m\.)?(?:music.)?youtu\.?be(?:\.com)?"
     r"(?:\w*.?://)?\w*.?\w*-?.?\w*(?:playlist|list|embed|.*/)?\??"
@@ -95,7 +99,8 @@ def make_embed(
     thumbnail_url: str | None = None,
 ) -> discord.Embed:
     return (
-        discord.Embed(
+        discord
+        .Embed(
             title=title,
             url=embed_url,
             description=description,

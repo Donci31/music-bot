@@ -89,9 +89,10 @@ class MusicBot(Bot):
 
             self.song_indexes[guild_id] = -1
 
+        self.song_indexes[guild_id] += 1
+
         cur_song = cur_queue[self.song_indexes[guild_id]]
 
-        self.song_indexes[guild_id] += 1
         self.cur_songs[guild_id] = cur_song
         self.progress_time[guild_id] = time.monotonic()
         self.pause_time[guild_id] = 0.0

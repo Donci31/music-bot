@@ -3,7 +3,9 @@ import random
 import time
 from typing import TYPE_CHECKING, cast
 
+import aiohttp
 import discord
+from bs4 import BeautifulSoup
 from discord.ext import commands
 from discord.ext.commands import Cog, Context
 from pytubefix import Playlist, Search, YouTube
@@ -36,6 +38,20 @@ class MusicCommands(Cog):
             youtube_song = YouTube(f"https://www.youtube.com/watch?v={song_id}")
             await self.bot.add_song(ctx, youtube_song)
 
+        elif spotify_match := mu.SPOTIFY_REGEX.fullmatch(song):
+            async with (
+                aiohttp.ClientSession() as session,
+                session.get(
+                    f"https://open.spotify.com/track/{spotify_match.group('spotify_id')}",
+                ) as response,
+            ):
+                html = await response.text()
+                soup = BeautifulSoup(html, "html.parser")
+
+                title = soup.title.string.removesuffix(" | Spotify")
+
+                youtube_song = Search(title).videos[0]
+                await self.bot.add_song(ctx, youtube_song)
         else:
             youtube_song = Search(song).videos[0]
             await self.bot.add_song(ctx, youtube_song)
