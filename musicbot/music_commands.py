@@ -35,7 +35,10 @@ class MusicCommands(Cog):
 
         elif youtube_match := mu.YOUTUBE_WATCH_REGEX.fullmatch(song):
             song_id = youtube_match.group("youtube_id")
-            youtube_song = YouTube(f"https://www.youtube.com/watch?v={song_id}")
+            youtube_song = YouTube(
+                f"https://www.youtube.com/watch?v={song_id}",
+                client="WEB",
+            )
             await self.bot.add_song(ctx, youtube_song)
 
         elif spotify_match := mu.SPOTIFY_REGEX.fullmatch(song):
